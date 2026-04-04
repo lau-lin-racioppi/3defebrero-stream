@@ -3,7 +3,7 @@ export async function onRequestGet(context) {
   const items = await context.env.ITEMS.get('list', 'json') || [];
   return new Response(JSON.stringify(items), {
     headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
-  });
+  }); 
 }
 
 // POST /api/items — add a conductor item
