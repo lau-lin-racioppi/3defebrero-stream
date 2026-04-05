@@ -145,6 +145,8 @@ function makeZ(type){
   var base={font:'Montserrat',animation:'slideLeft',duration:0.6,accentColor:'#2b6dd6',accentWidth:4,showAccent:true,
     posX:'left',posY:'bottom',offsetX:40,offsetY:60,bgOpacity:1,borderRadius:0,shadow:false,shadowColor:'#000000',shadowBlur:12,glow:false,glowColor:'#2b6dd6',glowSize:8,backdropBlur:6,
     heightMode:'auto',customHeight:60,textAlign:'left'};
+  if(type==='nameRole')return Object.assign({},base,{tag:'ENTREVISTA',tagPos:'left',tagFontSize:14,showTag:true,name:'Nombre Apellido',nameFontSize:28,role:'Cargo / Descripción',roleFontSize:16,tagBg:'#1a3fa0',tagText:'#fff',mainBg:'#0d1b3e',mainText:'#fff'});
+  if(type==='title')return Object.assign({},base,{tag:'EN VIVO',tagPos:'left',tagFontSize:14,showTag:true,text:'TÍTULO DEL SEGMENTO',titleSize:36,subtitle:'',subtitleSize:15,showSubtitle:true,tagBg:'#1a3fa0',tagText:'#fff',mainBg:'#0d1b3e',mainText:'#fff',font:'Oswald',animation:'expandCenter',widthMode:'auto',customWidth:700});
   return Object.assign({},base,{text:'Texto del ticker de noticias +++',bgColor:'#0d1b3e',textColor:'#fff',speed:30,tickerFontSize:18,posX:'left',posY:'bottom',offsetX:0,offsetY:0});
 }
 
