@@ -2,11 +2,11 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=DM+Sans:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=DM+Sans:wght@500;600;700&family=Oswald:wght@400;600;700&family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&family=Poppins:wght@400;600;700&family=Raleway:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:transparent;overflow:hidden;width:1920px;height:1080px}
-.slot{position:fixed;pointer-events:none;opacity:0;transition:opacity .2s ease}
+.slot{position:fixed;pointer-events:none;opacity:0;transition:opacity .25s ease}
 .slot.visible{opacity:1}
 .slot iframe{border:none;background:transparent;width:1920px;height:1080px;pointer-events:none}
 #filmina{position:fixed;pointer-events:none;font-family:'Montserrat',sans-serif;opacity:0;transition:opacity .3s}
@@ -29,10 +29,17 @@ body{background:transparent;overflow:hidden;width:1920px;height:1080px}
 .live-dot{width:8px;height:8px;border-radius:50%;background:#ff4444;animation:pulse 1.5s ease-in-out infinite;flex-shrink:0}
 @keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(255,68,68,.6)}50%{opacity:.7;box-shadow:0 0 0 5px rgba(255,68,68,0)}}
 .live-text{font-size:12px;font-weight:700;color:#fff;letter-spacing:1.5px;text-transform:uppercase}
+/* Dedicated ticker - not iframe based */
+#ticker-wrap{position:fixed;bottom:0;left:0;width:100%;pointer-events:none;opacity:0;transition:opacity .3s}
+#ticker-wrap.on{opacity:1}
+#ticker-line{height:3px}
+#ticker-bg{padding:10px 0;overflow:hidden;white-space:nowrap}
+#ticker-scroll{display:inline-block;white-space:nowrap;will-change:transform}
 </style>
 </head>
 <body>
 <div id="zocalos"></div>
+<div id="ticker-wrap"><div id="ticker-line"></div><div id="ticker-bg"><div id="ticker-scroll"></div></div></div>
 <div id="filmina"><div id="film-el"></div></div>
 <div id="mosca"><div id="mosca-el"></div></div>
 <div id="clock"></div>
@@ -41,6 +48,7 @@ body{background:transparent;overflow:hidden;width:1920px;height:1080px}
 var bc=new BroadcastChannel('3df-stream');
 var slots={},activeIds={};
 function hrgba(h,a){if(!h||h.length<7)return'rgba(0,0,0,'+a+')';return'rgba('+parseInt(h.slice(1,3),16)+','+parseInt(h.slice(3,5),16)+','+parseInt(h.slice(5,7),16)+','+a+')'}
+
 var SSVG={
   ig:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919C8.416 2.175 8.796 2.163 12 2.163zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12s.014 3.668.072 4.948c.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24s3.668-.014 4.948-.072c4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948s-.014-3.667-.072-4.947c-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>',
   x:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>',
@@ -48,14 +56,87 @@ var SSVG={
   web:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>'
 };
 
+// ═══ ZOCALOS — coexisten entre sí ═══
+bc.onmessage=function(e){
+  var d=e.data;
+  if(d.action==='show'){
+    // NO hide others — coexist
+    if(!slots[d.id]){var el=document.createElement('div');el.className='slot';document.getElementById('zocalos').appendChild(el);slots[d.id]=el}
+    slots[d.id].innerHTML='<iframe srcdoc="'+d.html.replace(/"/g,'&quot;')+'"></iframe>';
+    void slots[d.id].offsetWidth;slots[d.id].classList.add('visible');activeIds[d.id]=true;
+  }
+  else if(d.action==='hide'){if(slots[d.id]){slots[d.id].classList.remove('visible');setTimeout(function(){if(slots[d.id])slots[d.id].innerHTML=''},300)}delete activeIds[d.id]}
+  else if(d.action==='hideAll'){Object.keys(slots).forEach(function(id){slots[id].classList.remove('visible');setTimeout(function(){slots[id].innerHTML=''},300)});activeIds={};filmStop();moscaStop();stopClock();stopLive();tickerHide()}
+
+  // Dedicated ticker
+  else if(d.action==='showTicker')tickerShow(d);
+  else if(d.action==='updateTicker')tickerUpdate(d);
+  else if(d.action==='hideTicker')tickerHide();
+
+  // Filmina
+  else if(d.action==='showFilmina')filmStart(d);
+  else if(d.action==='hideFilmina')filmStop();
+  else if(d.action==='showMosca')moscaStart(d);
+  else if(d.action==='hideMosca')moscaStop();
+  else if(d.action==='showClock')startClock(d.cfg);
+  else if(d.action==='hideClock')stopClock();
+  else if(d.action==='showLive')startLive(d.cfg);
+  else if(d.action==='hideLive')stopLive();
+};
+
+// ═══ TICKER — JS-driven scroll, fluid text updates ═══
+var tickerAnim=null,tickerPos=0,tickerSpeed=1;
+function tickerShow(d){
+  var cfg=d.cfg,text=d.text;
+  var wrap=document.getElementById('ticker-wrap');
+  var line=document.getElementById('ticker-line');
+  var bg=document.getElementById('ticker-bg');
+  var scroll=document.getElementById('ticker-scroll');
+  line.style.background=cfg.accentColor||'#2b6dd6';
+  line.style.display=cfg.showAccent!==false?'block':'none';
+  bg.style.background=hrgba(cfg.bgColor||'#0d1b3e',cfg.bgOpacity||1);
+  bg.style.backdropFilter='blur('+(cfg.backdropBlur||6)+'px)';
+  scroll.style.fontFamily='"'+(cfg.font||'Montserrat')+'",sans-serif';
+  scroll.style.fontSize=(cfg.tickerFontSize||18)+'px';
+  scroll.style.fontWeight='600';
+  scroll.style.color=cfg.textColor||'#fff';
+  scroll.style.letterSpacing='.4px';
+  scroll.textContent=text;
+  tickerSpeed=(cfg.speed||30)/1000;
+  wrap.classList.add('on');
+  if(!tickerAnim)tickerAnimate();
+}
+function tickerUpdate(d){
+  var scroll=document.getElementById('ticker-scroll');
+  if(d.text)scroll.textContent=d.text;
+  if(d.cfg){
+    if(d.cfg.speed)tickerSpeed=d.cfg.speed/1000;
+    if(d.cfg.bgColor){document.getElementById('ticker-bg').style.background=hrgba(d.cfg.bgColor,d.cfg.bgOpacity||1)}
+    if(d.cfg.textColor)scroll.style.color=d.cfg.textColor;
+    if(d.cfg.tickerFontSize)scroll.style.fontSize=d.cfg.tickerFontSize+'px';
+  }
+}
+function tickerHide(){
+  document.getElementById('ticker-wrap').classList.remove('on');
+  if(tickerAnim){cancelAnimationFrame(tickerAnim);tickerAnim=null}
+}
+function tickerAnimate(){
+  var scroll=document.getElementById('ticker-scroll');
+  var w=scroll.offsetWidth;
+  if(w===0)w=2000;
+  tickerPos-=tickerSpeed;
+  if(tickerPos<-w)tickerPos=1920;
+  scroll.style.transform='translateX('+tickerPos+'px)';
+  tickerAnim=requestAnimationFrame(tickerAnimate);
+}
+
 // ═══ FILMINA ═══
 var film={items:[],cfg:{},on:false,idx:0,timer:null};
 function filmStart(data){
   film.items=data.items;film.cfg=data.cfg;film.idx=0;film.on=true;
   var wrap=document.getElementById('filmina');
   wrap.style.top=data.cfg.top+'px';wrap.style.right=data.cfg.right+'px';
-  wrap.classList.add('on');
-  filmCycle();
+  wrap.classList.add('on');filmCycle();
 }
 function filmStop(){
   film.on=false;if(film.timer)clearTimeout(film.timer);
@@ -67,31 +148,18 @@ function filmCycle(){
   var cfg=film.cfg,item=film.items[film.idx%film.items.length];
   var el=document.getElementById('film-el');
   var sz=cfg.iconSize||18;
-  // Hide first
   el.classList.remove('show','shake');
-  // Set content while hidden
   var svg=(SSVG[item.id]||'').replace(/<svg /,'<svg width="'+sz+'" height="'+sz+'" ');
   el.innerHTML=svg+'<span>'+item.handle+'</span>';
-  el.style.background=hrgba(cfg.bg,cfg.opacity);
-  el.style.color=cfg.text;el.style.fontSize=cfg.fontSize+'px';
-  // Fade in after brief pause
+  el.style.background=hrgba(cfg.bg,cfg.opacity);el.style.color=cfg.text;el.style.fontSize=cfg.fontSize+'px';
   film.timer=setTimeout(function(){
-    if(!film.on)return;
-    el.classList.add('show');
-    // Visible period
+    if(!film.on)return;el.classList.add('show');
     film.timer=setTimeout(function(){
       if(!film.on)return;
-      // Shake
       if(cfg.shake!==false){el.classList.add('shake');setTimeout(function(){el.classList.remove('shake')},350)}
-      // Fade out
       film.timer=setTimeout(function(){
-        if(!film.on)return;
-        el.classList.remove('show');
-        // Next after fade out completes
-        film.timer=setTimeout(function(){
-          film.idx=(film.idx+1)%film.items.length;
-          if(film.on)filmCycle();
-        },500);
+        if(!film.on)return;el.classList.remove('show');
+        film.timer=setTimeout(function(){film.idx=(film.idx+1)%film.items.length;if(film.on)filmCycle()},500);
       },cfg.shake!==false?500:100);
     },(cfg.showTime||3)*1000);
   },100);
@@ -104,8 +172,7 @@ function moscaStart(data){
   var wrap=document.getElementById('mosca');
   wrap.style.top=data.cfg.top+'px';wrap.style.right=data.cfg.right+'px';
   wrap.style.width=data.cfg.size+'px';wrap.style.height=data.cfg.size+'px';
-  wrap.classList.add('on');
-  moscaShow();
+  wrap.classList.add('on');moscaShow();
 }
 function moscaStop(){
   mosca.on=false;if(mosca.timer)clearTimeout(mosca.timer);
@@ -116,25 +183,13 @@ function moscaShow(){
   if(!mosca.on||!mosca.items.length)return;
   var cfg=mosca.cfg,item=mosca.items[mosca.idx%mosca.items.length];
   var el=document.getElementById('mosca-el');
-  // Fade out
   el.classList.remove('show');
   mosca.timer=setTimeout(function(){
     if(!mosca.on)return;
-    // Swap content
-    if(item.type==='image'&&item.url){
-      el.innerHTML='<img src="'+item.url+'" style="max-width:'+cfg.size+'px;max-height:'+cfg.size+'px;opacity:'+(cfg.opacity||0.7)+'">';
-    }else{
-      el.innerHTML='<div class="mosca-text" style="font-size:'+(cfg.textSize||16)+'px;color:'+(cfg.textColor||'#fff')+';opacity:'+(cfg.opacity||0.7)+'">'+(item.text||'')+'</div>';
-    }
-    // Fade in
+    if(item.type==='image'&&item.url)el.innerHTML='<img src="'+item.url+'" style="max-width:'+cfg.size+'px;max-height:'+cfg.size+'px;opacity:'+(cfg.opacity||0.7)+'">';
+    else el.innerHTML='<div class="mosca-text" style="font-size:'+(cfg.textSize||16)+'px;color:'+(cfg.textColor||'#fff')+';opacity:'+(cfg.opacity||0.7)+'">'+(item.text||'')+'</div>';
     setTimeout(function(){el.classList.add('show')},50);
-    // Next
-    if(mosca.items.length>1){
-      mosca.timer=setTimeout(function(){
-        mosca.idx=(mosca.idx+1)%mosca.items.length;
-        if(mosca.on)moscaShow();
-      },(cfg.interval||8)*1000);
-    }
+    if(mosca.items.length>1){mosca.timer=setTimeout(function(){mosca.idx=(mosca.idx+1)%mosca.items.length;if(mosca.on)moscaShow()},(cfg.interval||8)*1000)}
   },700);
 }
 
@@ -143,10 +198,8 @@ var clockTimer=null;
 function startClock(cfg){
   var el=document.getElementById('clock');
   el.style.top=cfg.top+'px';
-  if(cfg.posX==='left'){el.style.left=cfg.offsetX+'px';el.style.right='auto'}
-  else{el.style.right=cfg.offsetX+'px';el.style.left='auto'}
-  el.style.fontSize=cfg.fontSize+'px';el.style.color=cfg.textColor;
-  el.style.background=hrgba(cfg.bg,cfg.opacity);
+  if(cfg.posX==='left'){el.style.left=cfg.offsetX+'px';el.style.right='auto'}else{el.style.right=cfg.offsetX+'px';el.style.left='auto'}
+  el.style.fontSize=cfg.fontSize+'px';el.style.color=cfg.textColor;el.style.background=hrgba(cfg.bg,cfg.opacity);
   el.classList.add('on');
   function tick(){var n=new Date();el.textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')}
   tick();if(clockTimer)clearInterval(clockTimer);clockTimer=setInterval(tick,10000);
@@ -157,35 +210,13 @@ function stopClock(){if(clockTimer)clearInterval(clockTimer);document.getElement
 function startLive(cfg){
   var el=document.getElementById('live-badge');
   el.style.top=cfg.top+'px';
-  if(cfg.posX==='left'){el.style.left=cfg.offsetX+'px';el.style.right='auto'}
-  else{el.style.right=cfg.offsetX+'px';el.style.left='auto'}
+  if(cfg.posX==='left'){el.style.left=cfg.offsetX+'px';el.style.right='auto'}else{el.style.right=cfg.offsetX+'px';el.style.left='auto'}
   if(cfg.fontSize)el.querySelector('.live-text').style.fontSize=cfg.fontSize+'px';
   if(cfg.bg)el.style.background=cfg.bg;
   if(cfg.text)el.querySelector('.live-text').textContent=cfg.text;
   el.classList.add('on');
 }
 function stopLive(){document.getElementById('live-badge').classList.remove('on')}
-
-// ═══ MESSAGES ═══
-bc.onmessage=function(e){
-  var d=e.data;
-  if(d.action==='show'){
-    Object.keys(activeIds).forEach(function(id){if(id!==d.id&&slots[id]){slots[id].classList.remove('visible');setTimeout(function(){if(slots[id])slots[id].innerHTML=''},300);delete activeIds[id]}});
-    if(!slots[d.id]){var el=document.createElement('div');el.className='slot';document.getElementById('zocalos').appendChild(el);slots[d.id]=el}
-    slots[d.id].innerHTML='<iframe srcdoc="'+d.html.replace(/"/g,'&quot;')+'"></iframe>';
-    void slots[d.id].offsetWidth;slots[d.id].classList.add('visible');activeIds[d.id]=true;
-  }
-  else if(d.action==='hide'){if(slots[d.id]){slots[d.id].classList.remove('visible');setTimeout(function(){if(slots[d.id])slots[d.id].innerHTML=''},300)}delete activeIds[d.id]}
-  else if(d.action==='hideAll'){Object.keys(slots).forEach(function(id){slots[id].classList.remove('visible');setTimeout(function(){slots[id].innerHTML=''},300)});activeIds={};filmStop();moscaStop();stopClock();stopLive()}
-  else if(d.action==='showFilmina')filmStart(d);
-  else if(d.action==='hideFilmina')filmStop();
-  else if(d.action==='showMosca')moscaStart(d);
-  else if(d.action==='hideMosca')moscaStop();
-  else if(d.action==='showClock')startClock(d.cfg);
-  else if(d.action==='hideClock')stopClock();
-  else if(d.action==='showLive')startLive(d.cfg);
-  else if(d.action==='hideLive')stopLive();
-};
 </script>
 </body>
 </html>
