@@ -167,10 +167,15 @@ var S={
   presets:[],
   defaultPreset:null,
   newsSources:[
-    {id:'ambito',name:'Ámbito Financiero',url:'https://api.rss2json.com/v1/api.json?rss_url=https://www.ambito.com/rss/noticias.xml',on:false},
-    {id:'infobae',name:'Infobae',url:'https://api.rss2json.com/v1/api.json?rss_url=https://www.infobae.com/feeds/rss/',on:false},
-    {id:'tn',name:'TN',url:'https://api.rss2json.com/v1/api.json?rss_url=https://tn.com.ar/feeds/ultimas-noticias.xml',on:false},
-    {id:'pagina12',name:'Página 12',url:'https://api.rss2json.com/v1/api.json?rss_url=https://www.pagina12.com.ar/rss/ultimas-noticias',on:false}
+    {id:'clarin_ultimas',name:'Lo Último',rss:'https://www.clarin.com/rss/lo-ultimo/',on:false},
+    {id:'clarin_politica',name:'Política',rss:'https://www.clarin.com/rss/politica/',on:false},
+    {id:'clarin_mundo',name:'Mundo',rss:'https://www.clarin.com/rss/mundo/',on:false},
+    {id:'clarin_sociedad',name:'Sociedad',rss:'https://www.clarin.com/rss/sociedad/',on:false},
+    {id:'clarin_policiales',name:'Policiales',rss:'https://www.clarin.com/rss/policiales/',on:false},
+    {id:'clarin_rural',name:'Rural',rss:'https://www.clarin.com/rss/rural/',on:false},
+    {id:'clarin_economia',name:'Economía',rss:'https://www.clarin.com/rss/economia/',on:false},
+    {id:'clarin_internacional',name:'Internacional',rss:'https://www.clarin.com/rss/internacional/',on:false},
+    {id:'clarin_futbol',name:'Fútbol',rss:'https://www.clarin.com/rss/deportes/',on:false}
   ],
   newsCustomUrls:[]
 };
@@ -400,17 +405,19 @@ function renderEditor(app){
       h+=fldSelect('Alto',c.heightMode||'auto','heightMode',[{v:'auto',l:'Auto'},{v:'custom',l:'Fijo'}]);
       if(c.heightMode==='custom') h+=fldRange('Alto fijo',c.customHeight||60,20,300,1,'px','customHeight');
     } else {
-      h+=fldTextarea('Texto manual',c.text,'text');
+      h+=fldTextarea('Texto manual (se sobreescribe con noticias)',c.text,'text');
       h+=fldRange('Tamaño texto',c.tickerFontSize||18,1,100,1,'px','tickerFontSize');
-      h+=fldRange('Velocidad',c.speed,8,80,2,'s','speed');
-      h+='<div class="sep">Noticias automáticas</div>';
-      h+='<button class="btn-s" onclick="fetchNews()" style="width:100%;justify-content:center;margin-bottom:8px">🔄 Cargar titulares</button>';
+      h+=fldRange('Velocidad (px/frame)',c.speed,8,80,2,'','speed');
+      h+='<div class="sep">Fuentes RSS Clarín</div>';
+      h+='<p style="font-size:10px;color:var(--muted);margin-bottom:8px">Activá las secciones que querés. Se cargan automáticamente.</p>';
+      h+='<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">';
       S.newsSources.forEach(function(ns,i){
-        h+='<div class="news-src"><input type="checkbox" '+(ns.on?'checked':'')+' onchange="toggleNewsSource('+i+')"><span class="info">'+ns.name+'</span></div>';
+        h+='<button class="btn-s'+(ns.on?' live':'')+'" onclick="toggleNewsAuto('+i+')" style="font-size:10px">'+ns.name+'</button>';
       });
+      h+='</div>';
       if(S.newsCustomUrls.length){
         S.newsCustomUrls.forEach(function(u,i){
-          h+='<div class="news-src"><input type="checkbox" checked><span class="info" style="font-size:10px;color:var(--muted)">'+esc(u.name)+'</span><button class="btn-s danger" onclick="removeCustomNews('+i+')" style="width:24px;height:24px;font-size:10px;flex-shrink:0">✕</button></div>';
+          h+='<div class="news-src"><span class="info" style="font-size:10px;color:var(--muted)">'+esc(u.name)+'</span><button class="btn-s danger" onclick="removeCustomNews('+i+')" style="width:24px;height:24px;font-size:10px;flex-shrink:0">✕</button></div>';
         });
       }
       h+='<div style="display:flex;gap:6px;margin:8px 0"><input type="text" id="customNewsName" placeholder="Nombre fuente" style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:6px 8px;color:#eee;font-size:11px;outline:none;font-family:inherit"><input type="text" id="customNewsUrl" placeholder="URL RSS" style="flex:2;background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:6px 8px;color:#eee;font-size:11px;outline:none;font-family:inherit"><button class="btn-s" onclick="addCustomNews()">+</button></div>';
@@ -637,7 +644,10 @@ function updC(key,val){
   z.config[key]=val;save();
   var f=document.getElementById('pvFrame');
   if(f)f.srcdoc=genHTML(z);
-  if(z.live) bc.postMessage({action:'show',id:z.id,html:genHTML(z,true)});
+  if(z.live){
+    if(z.type==='ticker') bc.postMessage({action:'updateTicker',text:z.config.text,cfg:z.config});
+    else bc.postMessage({action:'show',id:z.id,html:genHTML(z,true)});
+  }
 }
 
 // Full re-render (for selects, ranges, checkboxes)
@@ -649,7 +659,10 @@ function updFull(key,val){
   var z=S.zocalos.find(function(x){return x.id===S.editId});
   if(!z)return;
   z.config[key]=val;save();
-  if(z.live) bc.postMessage({action:'show',id:z.id,html:genHTML(z,true)});
+  if(z.live){
+    if(z.type==='ticker') bc.postMessage({action:'updateTicker',text:z.config.text,cfg:z.config});
+    else bc.postMessage({action:'show',id:z.id,html:genHTML(z,true)});
+  }
   render();
 }
 
@@ -666,7 +679,7 @@ function deleteZ(id){
   if(!z)return;
   var label=z.type==='nameRole'?z.config.name:z.type==='title'?z.config.text:'Ticker';
   if(!confirm('¿Eliminar "'+label+'"?'))return;
-  if(z.live) bc.postMessage({action:'hide',id:id});
+  if(z.live){if(z.type==='ticker')bc.postMessage({action:'hideTicker'});else bc.postMessage({action:'hide',id:id})}
   S.zocalos=S.zocalos.filter(function(x){return x.id!==id});
   if(S.editId===id)S.editId=null;
   save();render();
@@ -701,33 +714,46 @@ function addFromPreset(pid){
 }
 
 // News ticker
-function toggleNewsSource(i){S.newsSources[i].on=!S.newsSources[i].on;save();render()}
+function toggleNewsAuto(i){
+  S.newsSources[i].on=!S.newsSources[i].on;save();
+  autoFetchNews();
+  render();
+}
 function addCustomNews(){
   var name=document.getElementById('customNewsName').value.trim();
   var url=document.getElementById('customNewsUrl').value.trim();
   if(!name||!url)return;
-  S.newsCustomUrls.push({name:name,url:'https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(url)});
-  save();render();
+  S.newsCustomUrls.push({name:name,rss:url,on:true});
+  save();autoFetchNews();render();
 }
-function removeCustomNews(i){S.newsCustomUrls.splice(i,1);save();render()}
-function fetchNews(){
-  var sources=S.newsSources.filter(function(s){return s.on}).concat(S.newsCustomUrls);
-  if(!sources.length){alert('Activá al menos una fuente de noticias');return}
-  var z=S.zocalos.find(function(x){return x.id===S.editId});
-  if(!z)return;
-  var headlines=[];
-  var done=0;
+function removeCustomNews(i){S.newsCustomUrls.splice(i,1);save();autoFetchNews();render()}
+
+var newsFetchTimer=null;
+function autoFetchNews(){
+  var sources=S.newsSources.filter(function(s){return s.on});
+  S.newsCustomUrls.forEach(function(u){if(u.on!==false)sources.push(u)});
+  if(!sources.length)return;
+  var z=S.zocalos.find(function(x){return x.id===S.editId&&x.type==='ticker'});
+  var headlines=[];var done=0;var total=sources.length;
   sources.forEach(function(src){
-    fetch(src.url).then(function(r){return r.json()}).then(function(data){
+    var apiUrl='https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(src.rss);
+    fetch(apiUrl).then(function(r){return r.json()}).then(function(data){
       if(data.items){data.items.slice(0,5).forEach(function(item){headlines.push(item.title)})}
       done++;
-      if(done===sources.length){
-        if(headlines.length){
-          z.config.text=headlines.join(' +++ ');
-          save();render();
-        } else {alert('No se encontraron titulares')}
+      if(done>=total&&headlines.length){
+        var text=headlines.join(' +++ ');
+        if(z){z.config.text=text;save()}
+        // Update any live ticker
+        S.zocalos.forEach(function(tz){
+          if(tz.type==='ticker'&&tz.live){
+            tz.config.text=text;
+            bc.postMessage({action:'updateTicker',text:text,cfg:tz.config});
+          }
+        });
+        save();
+        if(S.tab==='z'&&S.editId)render();
       }
-    }).catch(function(){done++;if(done===sources.length&&headlines.length){z.config.text=headlines.join(' +++ ');save();render()}});
+    }).catch(function(){done++;});
   });
 }
 function replayPv(){
@@ -743,20 +769,22 @@ function toggleLive(id){
   if(!z)return;
   if(z.live){
     z.live=false;
-    bc.postMessage({action:'hide',id:id});
+    if(z.type==='ticker') bc.postMessage({action:'hideTicker'});
+    else bc.postMessage({action:'hide',id:id});
   } else {
-    // Hide others first
-    S.zocalos.forEach(function(x){
-      if(x.live&&x.id!==id){x.live=false;bc.postMessage({action:'hide',id:x.id})}
-    });
     z.live=true;
-    bc.postMessage({action:'show',id:id,html:genHTML(z)});
+    if(z.type==='ticker'){
+      var text=z.config.text||'';
+      bc.postMessage({action:'showTicker',cfg:z.config,text:text});
+    } else {
+      bc.postMessage({action:'show',id:id,html:genHTML(z)});
+    }
   }
   save();render();
 }
 
 function hideAllZocalos(){
-  S.zocalos.forEach(function(z){if(z.live){z.live=false;bc.postMessage({action:'hide',id:z.id})}});
+  S.zocalos.forEach(function(z){if(z.live){z.live=false;if(z.type==='ticker')bc.postMessage({action:'hideTicker'});else bc.postMessage({action:'hide',id:z.id})}});
   if(S.filminaLive){S.filminaLive=false;bc.postMessage({action:'hideFilmina'})}
   if(S.moscaLive){S.moscaLive=false;bc.postMessage({action:'hideMosca'})}
   if(S.clockLive){S.clockLive=false;bc.postMessage({action:'hideClock'})}
@@ -887,7 +915,12 @@ if(S.filminaAuto&&S.filminaLive)sendFilmina();
 startSocialTimer();
 // Re-send live states on load (in case overlay was refreshed)
 setTimeout(function(){
-  S.zocalos.forEach(function(z){if(z.live)bc.postMessage({action:'show',id:z.id,html:genHTML(z)})});
+  S.zocalos.forEach(function(z){
+    if(z.live){
+      if(z.type==='ticker') bc.postMessage({action:'showTicker',cfg:z.config,text:z.config.text});
+      else bc.postMessage({action:'show',id:z.id,html:genHTML(z)});
+    }
+  });
   if(S.filminaLive)sendFilmina();
   if(S.moscaLive)sendMosca();
   if(S.clockLive)sendClock();
