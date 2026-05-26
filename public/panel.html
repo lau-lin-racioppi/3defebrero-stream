@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -161,6 +160,8 @@ var S={
   moscaLive:false,
   clockCfg:{top:28,offsetX:140,posX:'right',fontSize:14,textColor:'#ffffff',bg:'#0d1b3e',opacity:0.7},
   clockLive:false,
+  liveCfg:{top:28,offsetX:40,posX:'right',fontSize:12,bg:'rgba(204,20,20,0.9)',text:'EN VIVO'},
+  liveLive:false,
   socialIdx:0,
   conductorItems:[],
   presets:[],
@@ -174,8 +175,8 @@ var S={
   newsCustomUrls:[]
 };
 
-function save(){try{localStorage.setItem('3df_state',JSON.stringify({z:S.zocalos,s:S.socials,fc:S.filmCfg,fa:S.filminaAuto,mi:S.moscaItems,mc:S.moscaCfg,cc:S.clockCfg,pr:S.presets,dp:S.defaultPreset,ns:S.newsSources,ncu:S.newsCustomUrls}))}catch(e){}}
-function load(){try{var d=JSON.parse(localStorage.getItem('3df_state'));if(d){if(d.z)S.zocalos=d.z;if(d.s)S.socials=d.s;if(d.fc)S.filmCfg=Object.assign(S.filmCfg,d.fc);if(d.fa!==undefined)S.filminaAuto=d.fa;if(d.mi)S.moscaItems=d.mi;if(d.mc)S.moscaCfg=Object.assign(S.moscaCfg,d.mc);if(d.cc)S.clockCfg=Object.assign(S.clockCfg,d.cc);if(d.pr)S.presets=d.pr;if(d.dp!==undefined)S.defaultPreset=d.dp;if(d.ns)S.newsSources=d.ns;if(d.ncu)S.newsCustomUrls=d.ncu}}catch(e){}}
+function save(){try{localStorage.setItem('3df_state',JSON.stringify({z:S.zocalos,s:S.socials,fc:S.filmCfg,fa:S.filminaAuto,mi:S.moscaItems,mc:S.moscaCfg,cc:S.clockCfg,lc:S.liveCfg,pr:S.presets,dp:S.defaultPreset,ns:S.newsSources,ncu:S.newsCustomUrls}))}catch(e){}}
+function load(){try{var d=JSON.parse(localStorage.getItem('3df_state'));if(d){if(d.z)S.zocalos=d.z;if(d.s)S.socials=d.s;if(d.fc)S.filmCfg=Object.assign(S.filmCfg,d.fc);if(d.fa!==undefined)S.filminaAuto=d.fa;if(d.mi)S.moscaItems=d.mi;if(d.mc)S.moscaCfg=Object.assign(S.moscaCfg,d.mc);if(d.cc)S.clockCfg=Object.assign(S.clockCfg,d.cc);if(d.lc)S.liveCfg=Object.assign(S.liveCfg,d.lc);if(d.pr)S.presets=d.pr;if(d.dp!==undefined)S.defaultPreset=d.dp;if(d.ns)S.newsSources=d.ns;if(d.ncu)S.newsCustomUrls=d.ncu}}catch(e){}}
 load();
 // ═══════════════════════════════
 // HTML GENERATORS (for overlay)
@@ -561,19 +562,34 @@ function renderMosca(app){
 
 function renderClock(app){
   var h='';
+  // Clock section
+  h+='<div style="padding:6px 10px 2px"><div class="sep" style="margin:0">⏰ Reloj</div></div>';
   h+='<div class="soc-ctrl">';
   h+='<button class="btn-s'+(S.clockLive?' live':'')+'" onclick="toggleClock()">'+(S.clockLive?'● AL AIRE':'○ Mostrar')+'</button>';
   h+='</div>';
   h+='<div style="padding:10px">';
-  h+='<div class="sep">Aspecto</div>';
   h+=fldRange('Tamaño',S.clockCfg.fontSize,10,32,1,'px','c_fontSize');
   h+=fldRange('Opacidad fondo',S.clockCfg.opacity,0,1,0.05,'','c_opacity');
   h+='<div class="colors">'+fldColor('Texto',S.clockCfg.textColor,'c_textColor')+fldColor('Fondo',S.clockCfg.bg,'c_bg')+'</div>';
-  h+='<div class="sep">Posición</div>';
   h+=fldSelect('Horizontal',S.clockCfg.posX||'right','c_posX',[{v:'left',l:'Izquierda'},{v:'right',l:'Derecha'}]);
   h+=fldRange('Desde arriba',S.clockCfg.top,5,300,5,'px','c_top');
   h+=fldRange('Offset horizontal',S.clockCfg.offsetX,5,400,5,'px','c_offsetX');
   h+='</div>';
+
+  // EN VIVO badge section
+  h+='<div style="padding:6px 10px 2px"><div class="sep" style="margin:0;color:var(--red)">🔴 EN VIVO</div></div>';
+  h+='<div class="soc-ctrl">';
+  h+='<button class="btn-s'+(S.liveLive?' live':'')+'" style="'+(S.liveLive?'border-color:var(--red);color:var(--red);background:rgba(204,51,68,.08)':'')+'" onclick="toggleLiveBadge()">'+(S.liveLive?'● AL AIRE':'○ Mostrar')+'</button>';
+  h+='</div>';
+  h+='<div style="padding:10px">';
+  h+=fldText('Texto',S.liveCfg.text||'EN VIVO','lv_text');
+  h+=fldRange('Tamaño texto',S.liveCfg.fontSize||12,8,28,1,'px','lv_fontSize');
+  h+='<div class="colors">'+fldColor('Color fondo',S.liveCfg.bg||'#cc1414','lv_bg')+'</div>';
+  h+=fldSelect('Horizontal',S.liveCfg.posX||'right','lv_posX',[{v:'left',l:'Izquierda'},{v:'right',l:'Derecha'}]);
+  h+=fldRange('Desde arriba',S.liveCfg.top||28,5,300,5,'px','lv_top');
+  h+=fldRange('Offset horizontal',S.liveCfg.offsetX||40,5,400,5,'px','lv_offsetX');
+  h+='</div>';
+
   app.innerHTML=h;
 }
 
@@ -615,6 +631,7 @@ function updC(key,val){
   if(key.startsWith('f_')){var fk=key.slice(2);S.filmCfg[fk]=val;save();if(S.filminaLive)sendFilmina();return}
   if(key.startsWith('m_')){var mk=key.slice(2);S.moscaCfg[mk]=val;save();if(S.moscaLive)sendMosca();return}
   if(key.startsWith('c_')){var ck=key.slice(2);S.clockCfg[ck]=val;save();if(S.clockLive)sendClock();return}
+  if(key.startsWith('lv_')){var lk=key.slice(3);S.liveCfg[lk]=val;save();if(S.liveLive)sendLive();return}
   var z=S.zocalos.find(function(x){return x.id===S.editId});
   if(!z)return;
   z.config[key]=val;save();
@@ -628,6 +645,7 @@ function updFull(key,val){
   if(key.startsWith('f_')){var fk=key.slice(2);S.filmCfg[fk]=val;save();if(S.filminaLive)sendFilmina();render();return}
   if(key.startsWith('m_')){var mk=key.slice(2);S.moscaCfg[mk]=val;save();if(S.moscaLive)sendMosca();render();return}
   if(key.startsWith('c_')){var ck=key.slice(2);S.clockCfg[ck]=val;save();if(S.clockLive)sendClock();render();return}
+  if(key.startsWith('lv_')){var lk=key.slice(3);S.liveCfg[lk]=val;save();if(S.liveLive)sendLive();render();return}
   var z=S.zocalos.find(function(x){return x.id===S.editId});
   if(!z)return;
   z.config[key]=val;save();
@@ -742,6 +760,7 @@ function hideAllZocalos(){
   if(S.filminaLive){S.filminaLive=false;bc.postMessage({action:'hideFilmina'})}
   if(S.moscaLive){S.moscaLive=false;bc.postMessage({action:'hideMosca'})}
   if(S.clockLive){S.clockLive=false;bc.postMessage({action:'hideClock'})}
+  if(S.liveLive){S.liveLive=false;bc.postMessage({action:'hideLive'})}
   save();render();
 }
 
@@ -782,6 +801,14 @@ function sendClock(){bc.postMessage({action:'showClock',cfg:S.clockCfg})}
 function toggleClock(){
   if(S.clockLive){S.clockLive=false;bc.postMessage({action:'hideClock'})}
   else{S.clockLive=true;sendClock()}
+  save();render();
+}
+
+// Live badge
+function sendLive(){bc.postMessage({action:'showLive',cfg:S.liveCfg})}
+function toggleLiveBadge(){
+  if(S.liveLive){S.liveLive=false;bc.postMessage({action:'hideLive'})}
+  else{S.liveLive=true;sendLive()}
   save();render();
 }
 
@@ -864,6 +891,7 @@ setTimeout(function(){
   if(S.filminaLive)sendFilmina();
   if(S.moscaLive)sendMosca();
   if(S.clockLive)sendClock();
+  if(S.liveLive)sendLive();
 },500);
 </script>
 </body>
