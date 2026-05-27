@@ -772,10 +772,17 @@ function toggleLive(id){
     if(z.type==='ticker') bc.postMessage({action:'hideTicker'});
     else bc.postMessage({action:'hide',id:id});
   } else {
+    // Hide others of SAME TYPE only
+    S.zocalos.forEach(function(x){
+      if(x.live&&x.id!==id&&x.type===z.type){
+        x.live=false;
+        if(x.type==='ticker') bc.postMessage({action:'hideTicker'});
+        else bc.postMessage({action:'hide',id:x.id});
+      }
+    });
     z.live=true;
     if(z.type==='ticker'){
-      var text=z.config.text||'';
-      bc.postMessage({action:'showTicker',cfg:z.config,text:text});
+      bc.postMessage({action:'showTicker',cfg:z.config,text:z.config.text||''});
     } else {
       bc.postMessage({action:'show',id:id,html:genHTML(z)});
     }
