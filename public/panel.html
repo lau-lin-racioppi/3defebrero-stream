@@ -957,38 +957,46 @@ function removeCorteScene(i){S.corteScenes.splice(i,1);save();render()}
 function updateCorteScene(i,val){S.corteScenes[i]=val;save()}
 
 // OBS WebSocket v5
-var obsWS=null;
+var obsWS=null;var obsPolling=null;
 function connectOBS(){
   if(obsWS)try{obsWS.close()}catch(e){}
+  if(obsPolling)clearInterval(obsPolling);
   try{
     obsWS=new WebSocket('ws://localhost:4455');
     obsWS.onopen=function(){console.log('OBS WS: connected')};
     obsWS.onmessage=function(e){
       var msg=JSON.parse(e.data);
-      // Hello → Identify
+      // Hello → Identify with Scenes+Transitions events
       if(msg.op===0){
-        obsWS.send(JSON.stringify({op:1,d:{rpcVersion:1,eventSubscriptions:4}}));
+        obsWS.send(JSON.stringify({op:1,d:{rpcVersion:1,eventSubscriptions:20}}));
       }
       // Identified
       if(msg.op===2){
         S.obsConnected=true;render();
-        // Get current scene
-        obsWS.send(JSON.stringify({op:6,d:{requestType:'GetCurrentProgramScene',requestId:'init'}}));
+        pollCurrentScene();
+        // Poll every 2s as fallback for stingers
+        obsPolling=setInterval(pollCurrentScene,2000);
       }
       // Response (current scene)
       if(msg.op===7&&msg.d&&msg.d.responseData&&msg.d.responseData.sceneName){
         handleSceneChange(msg.d.responseData.sceneName);
       }
-      // Event
+      // Event - scene changed
       if(msg.op===5&&msg.d){
         if(msg.d.eventType==='CurrentProgramSceneChanged'&&msg.d.eventData){
           handleSceneChange(msg.d.eventData.sceneName);
         }
       }
     };
-    obsWS.onclose=function(){S.obsConnected=false;render();setTimeout(connectOBS,5000)};
+    obsWS.onclose=function(){S.obsConnected=false;if(obsPolling)clearInterval(obsPolling);render();setTimeout(connectOBS,5000)};
     obsWS.onerror=function(){S.obsConnected=false};
   }catch(e){S.obsConnected=false;console.log('OBS WS error:',e)}
+}
+
+function pollCurrentScene(){
+  if(obsWS&&obsWS.readyState===1){
+    obsWS.send(JSON.stringify({op:6,d:{requestType:'GetCurrentProgramScene',requestId:'poll'+Date.now()}}));
+  }
 }
 
 function handleSceneChange(sceneName){
