@@ -82,6 +82,12 @@ bc.onmessage=function(e){
   else if(d.action==='hideClock')stopClock();
   else if(d.action==='showLive')startLive(d.cfg);
   else if(d.action==='hideLive')stopLive();
+  else if(d.action==='updateLive'){
+    var el=document.getElementById('live-badge');
+    if(d.text)el.querySelector('.live-text').textContent=d.text;
+    if(d.bg)el.style.background=d.bg;
+    el.classList.add('on');
+  }
 };
 
 // ═══ TICKER — JS-driven scroll, fluid text updates ═══
