@@ -940,13 +940,15 @@ function goToVivo(){
   S.liveCfg.text='EN VIVO';
   S.liveCfg.bg='rgba(204,20,20,0.9)';
   S.liveLive=true;
-  sendLive();save();render();
+  bc.postMessage({action:'updateLive',text:'EN VIVO',bg:'rgba(204,20,20,0.9)'});
+  save();render();
 }
 function goToCorte(){
   S.liveCfg.text='EN EL CORTE';
   S.liveCfg.bg='rgba(160,120,0,0.9)';
   S.liveLive=true;
-  sendLive();save();render();
+  bc.postMessage({action:'updateLive',text:'EN EL CORTE',bg:'rgba(160,120,0,0.9)'});
+  save();render();
 }
 
 // Corte scenes management
