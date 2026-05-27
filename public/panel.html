@@ -163,6 +163,9 @@ var S={
   clockLive:false,
   liveCfg:{top:28,offsetX:40,posX:'right',fontSize:12,bg:'rgba(204,20,20,0.9)',text:'EN VIVO'},
   liveLive:false,
+  corteScenes:['CORTE 1'],
+  obsConnected:false,
+  currentScene:'',
   socialIdx:0,
   conductorItems:[],
   presets:[],
@@ -181,8 +184,8 @@ var S={
   newsCustomUrls:[]
 };
 
-function save(){try{localStorage.setItem('3df_state',JSON.stringify({z:S.zocalos,s:S.socials,fc:S.filmCfg,fa:S.filminaAuto,mi:S.moscaItems,mc:S.moscaCfg,cc:S.clockCfg,lc:S.liveCfg,pr:S.presets,dp:S.defaultPreset,ncu:S.newsCustomUrls,nson:S.newsSources.map(function(s){return s.on})}))}catch(e){}}
-function load(){try{var d=JSON.parse(localStorage.getItem('3df_state'));if(d){if(d.z)S.zocalos=d.z;if(d.s)S.socials=d.s;if(d.fc)S.filmCfg=Object.assign(S.filmCfg,d.fc);if(d.fa!==undefined)S.filminaAuto=d.fa;if(d.mi)S.moscaItems=d.mi;if(d.mc)S.moscaCfg=Object.assign(S.moscaCfg,d.mc);if(d.cc)S.clockCfg=Object.assign(S.clockCfg,d.cc);if(d.lc)S.liveCfg=Object.assign(S.liveCfg,d.lc);if(d.pr)S.presets=d.pr;if(d.dp!==undefined)S.defaultPreset=d.dp;if(d.ncu)S.newsCustomUrls=d.ncu;if(d.nson)d.nson.forEach(function(v,i){if(S.newsSources[i])S.newsSources[i].on=v})}}catch(e){}}
+function save(){try{localStorage.setItem('3df_state',JSON.stringify({z:S.zocalos,s:S.socials,fc:S.filmCfg,fa:S.filminaAuto,mi:S.moscaItems,mc:S.moscaCfg,cc:S.clockCfg,lc:S.liveCfg,cs:S.corteScenes,pr:S.presets,dp:S.defaultPreset,ncu:S.newsCustomUrls,nson:S.newsSources.map(function(s){return s.on})}))}catch(e){}}
+function load(){try{var d=JSON.parse(localStorage.getItem('3df_state'));if(d){if(d.z)S.zocalos=d.z;if(d.s)S.socials=d.s;if(d.fc)S.filmCfg=Object.assign(S.filmCfg,d.fc);if(d.fa!==undefined)S.filminaAuto=d.fa;if(d.mi)S.moscaItems=d.mi;if(d.mc)S.moscaCfg=Object.assign(S.moscaCfg,d.mc);if(d.cc)S.clockCfg=Object.assign(S.clockCfg,d.cc);if(d.lc)S.liveCfg=Object.assign(S.liveCfg,d.lc);if(d.cs)S.corteScenes=d.cs;if(d.pr)S.presets=d.pr;if(d.dp!==undefined)S.defaultPreset=d.dp;if(d.ncu)S.newsCustomUrls=d.ncu;if(d.nson)d.nson.forEach(function(v,i){if(S.newsSources[i])S.newsSources[i].on=v})}}catch(e){}}
 load();
 // ═══════════════════════════════
 // HTML GENERATORS (for overlay)
@@ -592,6 +595,8 @@ function renderClock(app){
   h+='<div style="padding:6px 10px 2px"><div class="sep" style="margin:0;color:var(--red)">🔴 EN VIVO</div></div>';
   h+='<div class="soc-ctrl">';
   h+='<button class="btn-s'+(S.liveLive?' live':'')+'" style="'+(S.liveLive?'border-color:var(--red);color:var(--red);background:rgba(204,51,68,.08)':'')+'" onclick="toggleLiveBadge()">'+(S.liveLive?'● AL AIRE':'○ Mostrar')+'</button>';
+  h+='<button class="btn-s" style="border-color:var(--red);color:var(--red)" onclick="goToVivo()">🔴 VIVO</button>';
+  h+='<button class="btn-s" style="border-color:#cc8800;color:#cc8800" onclick="goToCorte()">⏸ CORTE</button>';
   h+='</div>';
   h+='<div style="padding:10px">';
   h+=fldText('Texto',S.liveCfg.text||'EN VIVO','lv_text');
@@ -600,6 +605,22 @@ function renderClock(app){
   h+=fldSelect('Horizontal',S.liveCfg.posX||'right','lv_posX',[{v:'left',l:'Izquierda'},{v:'right',l:'Derecha'}]);
   h+=fldRange('Desde arriba',S.liveCfg.top||28,5,300,5,'px','lv_top');
   h+=fldRange('Offset horizontal',S.liveCfg.offsetX||40,5,400,5,'px','lv_offsetX');
+  h+='</div>';
+
+  // OBS Scene detection
+  h+='<div style="padding:6px 10px 2px"><div class="sep" style="margin:0">🎬 Detección de escenas OBS</div></div>';
+  h+='<div class="soc-ctrl">';
+  h+='<span style="font-size:11px;color:'+(S.obsConnected?'var(--green)':'var(--red)')+'">'+(S.obsConnected?'● Conectado':'○ Desconectado')+'</span>';
+  if(!S.obsConnected) h+='<button class="btn-s" onclick="connectOBS()" style="margin-left:8px">Conectar</button>';
+  else h+='<span style="font-size:10px;color:var(--muted);margin-left:8px">Escena: '+esc(S.currentScene)+'</span>';
+  h+='</div>';
+  h+='<div style="padding:10px">';
+  h+='<label style="font-size:10px;color:var(--muted);letter-spacing:.6px;font-weight:600">ESCENAS DE CORTE</label>';
+  h+='<p style="font-size:9px;color:var(--muted);margin:2px 0 6px">Cuando OBS cambie a estas escenas, el badge pasa a "EN EL CORTE"</p>';
+  S.corteScenes.forEach(function(sc,i){
+    h+='<div style="display:flex;gap:6px;margin-bottom:4px"><input type="text" value="'+esc(sc)+'" onchange="updateCorteScene('+i+',this.value)" style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:6px 8px;color:#eee;font-size:12px;outline:none;font-family:inherit"><button class="btn-s danger" onclick="removeCorteScene('+i+')" style="width:28px;flex-shrink:0">✕</button></div>';
+  });
+  h+='<button class="btn-s" onclick="addCorteScene()" style="width:100%;justify-content:center;margin-top:4px">+ Agregar escena de corte</button>';
   h+='</div>';
 
   app.innerHTML=h;
@@ -915,6 +936,73 @@ function toggleLiveBadge(){
   else{S.liveLive=true;sendLive()}
   save();render();
 }
+function goToVivo(){
+  S.liveCfg.text='EN VIVO';
+  S.liveCfg.bg='rgba(204,20,20,0.9)';
+  S.liveLive=true;
+  sendLive();save();render();
+}
+function goToCorte(){
+  S.liveCfg.text='EN EL CORTE';
+  S.liveCfg.bg='rgba(160,120,0,0.9)';
+  S.liveLive=true;
+  sendLive();save();render();
+}
+
+// Corte scenes management
+function addCorteScene(){S.corteScenes.push('');save();render()}
+function removeCorteScene(i){S.corteScenes.splice(i,1);save();render()}
+function updateCorteScene(i,val){S.corteScenes[i]=val;save()}
+
+// OBS WebSocket v5
+var obsWS=null;
+function connectOBS(){
+  if(obsWS)try{obsWS.close()}catch(e){}
+  try{
+    obsWS=new WebSocket('ws://localhost:4455');
+    obsWS.onopen=function(){console.log('OBS WS: connected')};
+    obsWS.onmessage=function(e){
+      var msg=JSON.parse(e.data);
+      // Hello → Identify
+      if(msg.op===0){
+        obsWS.send(JSON.stringify({op:1,d:{rpcVersion:1,eventSubscriptions:4}}));
+      }
+      // Identified
+      if(msg.op===2){
+        S.obsConnected=true;render();
+        // Get current scene
+        obsWS.send(JSON.stringify({op:6,d:{requestType:'GetCurrentProgramScene',requestId:'init'}}));
+      }
+      // Response (current scene)
+      if(msg.op===7&&msg.d&&msg.d.responseData&&msg.d.responseData.sceneName){
+        handleSceneChange(msg.d.responseData.sceneName);
+      }
+      // Event
+      if(msg.op===5&&msg.d){
+        if(msg.d.eventType==='CurrentProgramSceneChanged'&&msg.d.eventData){
+          handleSceneChange(msg.d.eventData.sceneName);
+        }
+      }
+    };
+    obsWS.onclose=function(){S.obsConnected=false;render();setTimeout(connectOBS,5000)};
+    obsWS.onerror=function(){S.obsConnected=false};
+  }catch(e){S.obsConnected=false;console.log('OBS WS error:',e)}
+}
+
+function handleSceneChange(sceneName){
+  S.currentScene=sceneName;
+  var isCorte=S.corteScenes.some(function(cs){return cs&&sceneName.toLowerCase().indexOf(cs.toLowerCase())!==-1});
+  if(isCorte){
+    goToCorte();
+  } else {
+    // Only switch back to VIVO if currently showing CORTE
+    if(S.liveCfg.text==='EN EL CORTE') goToVivo();
+  }
+  if(S.tab==='r')render();
+}
+
+// Auto-connect on load
+setTimeout(connectOBS,1000);
 
 var socTimer=null;
 function startSocialTimer(){
