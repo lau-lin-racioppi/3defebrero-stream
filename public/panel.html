@@ -180,8 +180,8 @@ var S={
   newsCustomUrls:[]
 };
 
-function save(){try{localStorage.setItem('3df_state',JSON.stringify({z:S.zocalos,s:S.socials,fc:S.filmCfg,fa:S.filminaAuto,mi:S.moscaItems,mc:S.moscaCfg,cc:S.clockCfg,lc:S.liveCfg,pr:S.presets,dp:S.defaultPreset,ns:S.newsSources,ncu:S.newsCustomUrls}))}catch(e){}}
-function load(){try{var d=JSON.parse(localStorage.getItem('3df_state'));if(d){if(d.z)S.zocalos=d.z;if(d.s)S.socials=d.s;if(d.fc)S.filmCfg=Object.assign(S.filmCfg,d.fc);if(d.fa!==undefined)S.filminaAuto=d.fa;if(d.mi)S.moscaItems=d.mi;if(d.mc)S.moscaCfg=Object.assign(S.moscaCfg,d.mc);if(d.cc)S.clockCfg=Object.assign(S.clockCfg,d.cc);if(d.lc)S.liveCfg=Object.assign(S.liveCfg,d.lc);if(d.pr)S.presets=d.pr;if(d.dp!==undefined)S.defaultPreset=d.dp;if(d.ns)S.newsSources=d.ns;if(d.ncu)S.newsCustomUrls=d.ncu}}catch(e){}}
+function save(){try{localStorage.setItem('3df_state',JSON.stringify({z:S.zocalos,s:S.socials,fc:S.filmCfg,fa:S.filminaAuto,mi:S.moscaItems,mc:S.moscaCfg,cc:S.clockCfg,lc:S.liveCfg,pr:S.presets,dp:S.defaultPreset,ncu:S.newsCustomUrls,nson:S.newsSources.map(function(s){return s.on})}))}catch(e){}}
+function load(){try{var d=JSON.parse(localStorage.getItem('3df_state'));if(d){if(d.z)S.zocalos=d.z;if(d.s)S.socials=d.s;if(d.fc)S.filmCfg=Object.assign(S.filmCfg,d.fc);if(d.fa!==undefined)S.filminaAuto=d.fa;if(d.mi)S.moscaItems=d.mi;if(d.mc)S.moscaCfg=Object.assign(S.moscaCfg,d.mc);if(d.cc)S.clockCfg=Object.assign(S.clockCfg,d.cc);if(d.lc)S.liveCfg=Object.assign(S.liveCfg,d.lc);if(d.pr)S.presets=d.pr;if(d.dp!==undefined)S.defaultPreset=d.dp;if(d.ncu)S.newsCustomUrls=d.ncu;if(d.nson)d.nson.forEach(function(v,i){if(S.newsSources[i])S.newsSources[i].on=v})}}catch(e){}}
 load();
 // ═══════════════════════════════
 // HTML GENERATORS (for overlay)
