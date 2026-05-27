@@ -104,7 +104,7 @@ function tickerShow(d){
   scroll.textContent=text;
   tickerSpeed=(cfg.speed||30)/1000;
   wrap.classList.add('on');
-  if(!tickerAnim)tickerAnimate();
+  if(tickerAnim)cancelAnimationFrame(tickerAnim);tickerPos=1920;tickerAnimate();
 }
 function tickerUpdate(d){
   var scroll=document.getElementById('ticker-scroll');
