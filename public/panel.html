@@ -101,6 +101,7 @@ body{background:var(--bg);color:var(--white);font-family:'DM Sans',sans-serif;fo
 <body>
 <div class="hdr">
   <div><h1>3 de Febrero Stream</h1><small>Panel de control</small></div>
+  <button class="btn-s" onclick="activateAll()" title="Activar todo" style="border-color:var(--green);color:var(--green)">▶ ALL</button>
   <button class="btn-s" onclick="hideAllZocalos()" title="Ocultar todo al aire">✕ OFF</button>
 </div>
 <div class="tabs">
@@ -408,6 +409,10 @@ function renderEditor(app){
       h+=fldTextarea('Texto manual (se sobreescribe con noticias)',c.text,'text');
       h+=fldRange('Tamaño texto',c.tickerFontSize||18,1,100,1,'px','tickerFontSize');
       h+=fldRange('Velocidad (px/frame)',c.speed,8,80,2,'','speed');
+      h+='<div style="display:flex;gap:6px;margin-bottom:10px">';
+      h+='<button class="btn-s" onclick="dockTickerToTitle()" style="flex:1;justify-content:center;font-size:10px">📌 Adosar al título</button>';
+      h+='<button class="btn-s" onclick="fetchFinancialData()" style="flex:1;justify-content:center;font-size:10px">💲 Cotizaciones</button>';
+      h+='</div>';
       h+='<div class="sep">Fuentes RSS Clarín</div>';
       h+='<p style="font-size:10px;color:var(--muted);margin-bottom:8px">Activá las secciones que querés. Se cargan automáticamente.</p>';
       h+='<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">';
@@ -797,6 +802,70 @@ function hideAllZocalos(){
   if(S.clockLive){S.clockLive=false;bc.postMessage({action:'hideClock'})}
   if(S.liveLive){S.liveLive=false;bc.postMessage({action:'hideLive'})}
   save();render();
+}
+
+function activateAll(){
+  // Activate first of each type
+  var types=['title','nameRole','ticker'];
+  types.forEach(function(t){
+    var z=S.zocalos.find(function(x){return x.type===t&&!x.live});
+    if(!z) z=S.zocalos.find(function(x){return x.type===t});
+    if(z&&!z.live){
+      z.live=true;
+      if(z.type==='ticker') bc.postMessage({action:'showTicker',cfg:z.config,text:z.config.text||''});
+      else bc.postMessage({action:'show',id:z.id,html:genHTML(z)});
+    }
+  });
+  // Activate overlays
+  if(!S.filminaLive){S.filminaLive=true;sendFilmina()}
+  if(!S.moscaLive){S.moscaLive=true;sendMosca()}
+  if(!S.clockLive){S.clockLive=true;sendClock()}
+  if(!S.liveLive){S.liveLive=true;sendLive()}
+  save();render();
+}
+
+// Dock ticker below the active title
+function dockTickerToTitle(){
+  var liveTitle=S.zocalos.find(function(z){return z.type==='title'&&z.live});
+  var liveTicker=S.zocalos.find(function(z){return z.type==='ticker'&&z.live});
+  if(!liveTitle){alert('No hay título al aire');return}
+  if(!liveTicker){alert('No hay ticker al aire');return}
+  var tc=liveTitle.config;
+  // Calculate position below the title
+  liveTicker.config.posX=tc.posX;
+  liveTicker.config.posY=tc.posY;
+  liveTicker.config.offsetX=tc.offsetX;
+  // Title is at offsetY from bottom/top, we add estimated title height below it
+  var titleH=(tc.titleSize||36)+30+(tc.tagFontSize||14)+10+(tc.accentWidth||4);
+  if(tc.heightMode==='custom')titleH=tc.customHeight+tc.accentWidth+(tc.tag?tc.tagFontSize+12:0);
+  if(tc.posY==='top') liveTicker.config.offsetY=(tc.offsetY||60)+titleH;
+  else liveTicker.config.offsetY=Math.max(0,(tc.offsetY||60)-titleH);
+  if(tc.widthMode==='custom'){liveTicker.config.widthMode='custom';liveTicker.config.customWidth=tc.customWidth}
+  save();
+  bc.postMessage({action:'updateTicker',text:liveTicker.config.text,cfg:liveTicker.config});
+  render();
+}
+
+// Financial indicators
+function fetchFinancialData(){
+  var z=S.zocalos.find(function(x){return x.id===S.editId&&x.type==='ticker'});
+  fetch('https://dolarapi.com/v1/cotizaciones').then(function(r){return r.json()}).then(function(data){
+    var parts=[];
+    data.forEach(function(d){
+      if(d.nombre&&d.venta) parts.push(d.nombre+': $'+d.venta);
+    });
+    if(parts.length){
+      var text='💲 '+parts.join(' | ')+' 💲';
+      if(z){z.config.text=text;save()}
+      S.zocalos.forEach(function(tz){
+        if(tz.type==='ticker'&&tz.live){
+          tz.config.text=text;
+          bc.postMessage({action:'updateTicker',text:text,cfg:tz.config});
+        }
+      });
+      save();render();
+    }
+  }).catch(function(e){alert('Error al obtener cotizaciones: '+e.message)});
 }
 
 // Filmina
