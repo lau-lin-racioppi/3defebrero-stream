@@ -474,17 +474,6 @@ function renderEditor(app){
 
   h+='</div>';
   
-  // ─── GORRITO MUNDIALISTA ───
-  h+='<div style="padding:6px 10px 2px"><div class="sep" style="margin:0;color:#f5d020">🎭 Gorrito mundialista</div></div>';
-  h+='<div class="soc-ctrl">';
-  h+='<button class="btn-s'+(S.gorritoLive?' live':'')+'" style="'+(S.gorritoLive?'border-color:#f5d020;color:#f5d020;background:rgba(245,208,28,.08)':'')+'" onclick="toggleGorrito()">'+( S.gorritoLive?'● AL AIRE':'○ Mostrar')+'</button>';
-  h+='</div>';
-  h+='<div style="padding:10px">';
-  h+=fldRange('Desde arriba',S.gorritoCfg.top,0,800,5,'px','go_top');
-  h+=fldRange('Desde izquierda',S.gorritoCfg.left,0,800,5,'px','go_left');
-  h+=fldRange('Tamaño',S.gorritoCfg.size,60,300,10,'px','go_size');
-  h+='</div>';
-
   app.innerHTML=h;
 }
 function renderSocials(app){
@@ -621,6 +610,17 @@ function renderClock(app){
     h+='<div style="display:flex;gap:6px;margin-bottom:4px"><input type="text" value="'+esc(sc)+'" onchange="updateCorteScene('+i+',this.value)" style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:6px 8px;color:#eee;font-size:12px;outline:none;font-family:inherit"><button class="btn-s danger" onclick="removeCorteScene('+i+')" style="width:28px;flex-shrink:0">✕</button></div>';
   });
   h+='<button class="btn-s" onclick="addCorteScene()" style="width:100%;justify-content:center;margin-top:4px">+ Agregar escena de corte</button>';
+  h+='</div>';
+
+  // ─── GORRITO MUNDIALISTA ───
+  h+='<div style="padding:6px 10px 2px"><div class="sep" style="margin:0;color:#f5d020">🎭 Gorrito mundialista</div></div>';
+  h+='<div class="soc-ctrl">';
+  h+='<button class="btn-s'+(S.gorritoLive?' live':'')+'" style="'+(S.gorritoLive?'border-color:#f5d020;color:#f5d020;background:rgba(245,208,28,.08)':'')+'" onclick="toggleGorrito()">'+( S.gorritoLive?'● AL AIRE':'○ Mostrar')+'</button>';
+  h+='</div>';
+  h+='<div style="padding:10px">';
+  h+=fldRange('Desde arriba',S.gorritoCfg.top,0,800,5,'px','go_top');
+  h+=fldRange('Desde izquierda',S.gorritoCfg.left,0,800,5,'px','go_left');
+  h+=fldRange('Tamaño',S.gorritoCfg.size,60,300,10,'px','go_size');
   h+='</div>';
 
   app.innerHTML=h;
