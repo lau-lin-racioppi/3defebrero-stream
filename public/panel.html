@@ -162,6 +162,7 @@ var S={
   clockLive:false,
   liveCfg:{top:28,offsetX:40,posX:'right',fontSize:12,bg:'rgba(204,20,20,0.9)',text:'EN VIVO'},
   liveLive:false,
+  gorritoLive:false,gorritoCfg:{top:220,left:0,size:120},
   corteScenes:['CORTE 1'],
   obsConnected:false,
   currentScene:'',
@@ -181,8 +182,8 @@ var S={
   newsCustomUrls:[]
 };
 
-function save(){try{localStorage.setItem('3df_state',JSON.stringify({z:S.zocalos,s:S.socials,fc:S.filmCfg,fa:S.filminaAuto,mi:S.moscaItems,mc:S.moscaCfg,cc:S.clockCfg,lc:S.liveCfg,cs:S.corteScenes,pr:S.presets,ncu:S.newsCustomUrls,nson:S.newsSources.map(function(s){return s.on})}))}catch(e){}}
-function load(){try{var d=JSON.parse(localStorage.getItem('3df_state'));if(d){if(d.z)S.zocalos=d.z;if(d.s)S.socials=d.s;if(d.fc)S.filmCfg=Object.assign(S.filmCfg,d.fc);if(d.fa!==undefined)S.filminaAuto=d.fa;if(d.mi)S.moscaItems=d.mi;if(d.mc)S.moscaCfg=Object.assign(S.moscaCfg,d.mc);if(d.cc)S.clockCfg=Object.assign(S.clockCfg,d.cc);if(d.lc)S.liveCfg=Object.assign(S.liveCfg,d.lc);if(d.cs)S.corteScenes=d.cs;if(d.pr)S.presets=d.pr;if(d.ncu)S.newsCustomUrls=d.ncu;if(d.nson)d.nson.forEach(function(v,i){if(S.newsSources[i])S.newsSources[i].on=v})}}catch(e){}}
+function save(){try{localStorage.setItem('3df_state',JSON.stringify({z:S.zocalos,s:S.socials,fc:S.filmCfg,fa:S.filminaAuto,mi:S.moscaItems,mc:S.moscaCfg,cc:S.clockCfg,lc:S.liveCfg,cs:S.corteScenes,pr:S.presets,ncu:S.newsCustomUrls,nson:S.newsSources.map(function(s){return s.on}),gl:S.gorritoLive,gc:S.gorritoCfg}))}catch(e){}}
+function load(){try{var d=JSON.parse(localStorage.getItem('3df_state'));if(d){if(d.z)S.zocalos=d.z;if(d.s)S.socials=d.s;if(d.fc)S.filmCfg=Object.assign(S.filmCfg,d.fc);if(d.fa!==undefined)S.filminaAuto=d.fa;if(d.mi)S.moscaItems=d.mi;if(d.mc)S.moscaCfg=Object.assign(S.moscaCfg,d.mc);if(d.cc)S.clockCfg=Object.assign(S.clockCfg,d.cc);if(d.lc)S.liveCfg=Object.assign(S.liveCfg,d.lc);if(d.cs)S.corteScenes=d.cs;if(d.pr)S.presets=d.pr;if(d.ncu)S.newsCustomUrls=d.ncu;if(d.nson)d.nson.forEach(function(v,i){if(S.newsSources[i])S.newsSources[i].on=v});if(d.gl!==undefined)S.gorritoLive=d.gl;if(d.gc)S.gorritoCfg=Object.assign(S.gorritoCfg,d.gc)}}catch(e){}}
 load();
 // ═══════════════════════════════
 // HTML GENERATORS (for overlay)
@@ -472,6 +473,18 @@ function renderEditor(app){
   h+='</div>';
 
   h+='</div>';
+  
+  // ─── GORRITO MUNDIALISTA ───
+  h+='<div style="padding:6px 10px 2px"><div class="sep" style="margin:0;color:#f5d020">🎭 Gorrito mundialista</div></div>';
+  h+='<div class="soc-ctrl">';
+  h+='<button class="btn-s'+(S.gorritoLive?' live':'')+'" style="'+(S.gorritoLive?'border-color:#f5d020;color:#f5d020;background:rgba(245,208,28,.08)':'')+'" onclick="toggleGorrito()">'+( S.gorritoLive?'● AL AIRE':'○ Mostrar')+'</button>';
+  h+='</div>';
+  h+='<div style="padding:10px">';
+  h+=fldRange('Desde arriba',S.gorritoCfg.top,0,800,5,'px','go_top');
+  h+=fldRange('Desde izquierda',S.gorritoCfg.left,0,800,5,'px','go_left');
+  h+=fldRange('Tamaño',S.gorritoCfg.size,60,300,10,'px','go_size');
+  h+='</div>';
+
   app.innerHTML=h;
 }
 function renderSocials(app){
@@ -651,7 +664,9 @@ function updC(key,val){
   if(key.startsWith('f_')){var fk=key.slice(2);S.filmCfg[fk]=val;save();if(S.filminaLive)sendFilmina();return}
   if(key.startsWith('m_')){var mk=key.slice(2);S.moscaCfg[mk]=val;save();if(S.moscaLive)sendMosca();return}
   if(key.startsWith('c_')){var ck=key.slice(2);S.clockCfg[ck]=val;save();if(S.clockLive)sendClock();return}
-  if(key.startsWith('lv_')){var lk=key.slice(3);S.liveCfg[lk]=val;save();if(S.liveLive)sendLive();return}
+  if(key.startsWith('lv_')){var lk=key.slice(3);S.liveCfg[lk]=val;save();if(S.liveLive)sendLive();
+  if(S.gorritoLive)sendGorrito();return}
+  if(key.startsWith('go_')){var gk=key.slice(3);S.gorritoCfg[gk]=val;save();if(S.gorritoLive)sendGorrito();return}
   var z=S.zocalos.find(function(x){return x.id===S.editId});
   if(!z)return;
   z.config[key]=val;save();
@@ -668,7 +683,8 @@ function updFull(key,val){
   if(key.startsWith('f_')){var fk=key.slice(2);S.filmCfg[fk]=val;save();if(S.filminaLive)sendFilmina();render();return}
   if(key.startsWith('m_')){var mk=key.slice(2);S.moscaCfg[mk]=val;save();if(S.moscaLive)sendMosca();render();return}
   if(key.startsWith('c_')){var ck=key.slice(2);S.clockCfg[ck]=val;save();if(S.clockLive)sendClock();render();return}
-  if(key.startsWith('lv_')){var lk=key.slice(3);S.liveCfg[lk]=val;save();if(S.liveLive)sendLive();render();return}
+  if(key.startsWith('lv_')){var lk=key.slice(3);S.liveCfg[lk]=val;save();if(S.liveLive)sendLive();
+  if(S.gorritoLive)sendGorrito();render();return}
   var z=S.zocalos.find(function(x){return x.id===S.editId});
   if(!z)return;
   z.config[key]=val;save();
@@ -809,6 +825,7 @@ function hideAllZocalos(){
   if(S.moscaLive){S.moscaLive=false;bc.postMessage({action:'hideMosca'})}
   if(S.clockLive){S.clockLive=false;bc.postMessage({action:'hideClock'})}
   if(S.liveLive){S.liveLive=false;bc.postMessage({action:'hideLive'})}
+  if(S.gorritoLive){S.gorritoLive=false;bc.postMessage({action:'hideGorrito'})}
   save();render();
 }
 
@@ -829,6 +846,7 @@ function activateAll(){
   if(!S.moscaLive){S.moscaLive=true;sendMosca()}
   if(!S.clockLive){S.clockLive=true;sendClock()}
   if(!S.liveLive){S.liveLive=true;sendLive()}
+  if(!S.gorritoLive){S.gorritoLive=true;sendGorrito()}
   save();render();
 }
 
@@ -920,6 +938,7 @@ function toggleClock(){
 function sendLive(){bc.postMessage({action:'showLive',cfg:S.liveCfg})}
 function toggleLiveBadge(){
   if(S.liveLive){S.liveLive=false;bc.postMessage({action:'hideLive'})}
+  if(S.gorritoLive){S.gorritoLive=false;bc.postMessage({action:'hideGorrito'})}
   else{S.liveLive=true;sendLive()}
   save();render();
 }
@@ -1018,6 +1037,15 @@ function deletePreset(id){
   save();render();
 }
 
+
+// Gorrito
+function sendGorrito(){bc.postMessage({action:'showGorrito',cfg:S.gorritoCfg})}
+function toggleGorrito(){
+  if(S.gorritoLive){S.gorritoLive=false;bc.postMessage({action:'hideGorrito'})}
+  else{S.gorritoLive=true;sendGorrito()}
+  save();render();
+}
+
 // Image picker for mosca (base64)
 function pickMoscaImage(idx){
   var input=document.createElement('input');input.type='file';input.accept='image/*';
@@ -1049,6 +1077,7 @@ setTimeout(function(){
   if(S.moscaLive)sendMosca();
   if(S.clockLive)sendClock();
   if(S.liveLive)sendLive();
+  if(S.gorritoLive)sendGorrito();
 },500);
 </script>
 </body>
