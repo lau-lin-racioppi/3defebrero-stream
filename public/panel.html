@@ -29,8 +29,7 @@ body{background:var(--bg);color:var(--white);font-family:'DM Sans',sans-serif;fo
 .card-head .info{flex:1;min-width:0}
 .card-head .name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card-head .sub{font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.card-preview{height:80px;background:repeating-conic-gradient(var(--bg) 0% 25%,#060c22 0% 50%) 0 0/12px 12px;position:relative;overflow:hidden;border-top:1px solid var(--border)}
-.card-preview iframe{width:1920px;height:1080px;border:none;background:transparent;transform-origin:0 0;pointer-events:none;position:absolute;top:0;left:0}
+
 .card-actions{display:flex;gap:4px;padding:6px 10px;border-top:1px solid var(--border);background:rgba(0,0,0,.15)}
 .btn-s{padding:4px 10px;border-radius:5px;border:1px solid var(--border);background:var(--bg);color:var(--muted);font-size:11px;cursor:pointer;font-family:inherit;font-weight:500;transition:.15s;display:flex;align-items:center;gap:4px}
 .btn-s:hover{border-color:var(--blueL);color:var(--blueL)}
@@ -167,9 +166,7 @@ var S={
   obsConnected:false,
   currentScene:'',
   socialIdx:0,
-  conductorItems:[],
   presets:[],
-  defaultPreset:null,
   newsSources:[
     {id:'clarin_ultimas',name:'Lo Último',rss:'https://www.clarin.com/rss/lo-ultimo/',on:false},
     {id:'clarin_politica',name:'Política',rss:'https://www.clarin.com/rss/politica/',on:false},
@@ -184,8 +181,8 @@ var S={
   newsCustomUrls:[]
 };
 
-function save(){try{localStorage.setItem('3df_state',JSON.stringify({z:S.zocalos,s:S.socials,fc:S.filmCfg,fa:S.filminaAuto,mi:S.moscaItems,mc:S.moscaCfg,cc:S.clockCfg,lc:S.liveCfg,cs:S.corteScenes,pr:S.presets,dp:S.defaultPreset,ncu:S.newsCustomUrls,nson:S.newsSources.map(function(s){return s.on})}))}catch(e){}}
-function load(){try{var d=JSON.parse(localStorage.getItem('3df_state'));if(d){if(d.z)S.zocalos=d.z;if(d.s)S.socials=d.s;if(d.fc)S.filmCfg=Object.assign(S.filmCfg,d.fc);if(d.fa!==undefined)S.filminaAuto=d.fa;if(d.mi)S.moscaItems=d.mi;if(d.mc)S.moscaCfg=Object.assign(S.moscaCfg,d.mc);if(d.cc)S.clockCfg=Object.assign(S.clockCfg,d.cc);if(d.lc)S.liveCfg=Object.assign(S.liveCfg,d.lc);if(d.cs)S.corteScenes=d.cs;if(d.pr)S.presets=d.pr;if(d.dp!==undefined)S.defaultPreset=d.dp;if(d.ncu)S.newsCustomUrls=d.ncu;if(d.nson)d.nson.forEach(function(v,i){if(S.newsSources[i])S.newsSources[i].on=v})}}catch(e){}}
+function save(){try{localStorage.setItem('3df_state',JSON.stringify({z:S.zocalos,s:S.socials,fc:S.filmCfg,fa:S.filminaAuto,mi:S.moscaItems,mc:S.moscaCfg,cc:S.clockCfg,lc:S.liveCfg,cs:S.corteScenes,pr:S.presets,ncu:S.newsCustomUrls,nson:S.newsSources.map(function(s){return s.on})}))}catch(e){}}
+function load(){try{var d=JSON.parse(localStorage.getItem('3df_state'));if(d){if(d.z)S.zocalos=d.z;if(d.s)S.socials=d.s;if(d.fc)S.filmCfg=Object.assign(S.filmCfg,d.fc);if(d.fa!==undefined)S.filminaAuto=d.fa;if(d.mi)S.moscaItems=d.mi;if(d.mc)S.moscaCfg=Object.assign(S.moscaCfg,d.mc);if(d.cc)S.clockCfg=Object.assign(S.clockCfg,d.cc);if(d.lc)S.liveCfg=Object.assign(S.liveCfg,d.lc);if(d.cs)S.corteScenes=d.cs;if(d.pr)S.presets=d.pr;if(d.ncu)S.newsCustomUrls=d.ncu;if(d.nson)d.nson.forEach(function(v,i){if(S.newsSources[i])S.newsSources[i].on=v})}}catch(e){}}
 load();
 // ═══════════════════════════════
 // HTML GENERATORS (for overlay)
@@ -298,7 +295,6 @@ function genFilmina(socials,cfg){
 // ═══════════════════════════════
 // RENDER
 // ═══════════════════════════════
-var pvScale=0.074; // 80px / 1080
 var edScale=0.12;  // 130px / 1080
 
 function render(){
@@ -318,9 +314,7 @@ function renderList(app){
     var icon=z.type==='nameRole'?'👤':z.type==='title'?'📺':'📰';
     var label=z.type==='nameRole'?z.config.name:z.type==='title'?z.config.text:'Ticker';
     var sub=z.type==='nameRole'?z.config.role:z.type==='title'?(z.config.tag||''):(z.config.text||'').slice(0,30)+'...';
-    var html=genHTML(z);
     h+='<div class="card">';
-    h+='<div class="card-preview"><iframe srcdoc="'+esc(html)+'" style="transform:scale('+pvScale+')"></iframe></div>';
     h+='<div class="card-head"><span class="icon">'+icon+'</span><div class="info"><div class="name">'+esc(label)+'</div><div class="sub">'+esc(sub)+'</div></div></div>';
     h+='<div class="card-actions">';
     h+='<button class="btn-s'+(z.live?' live':'')+'" onclick="toggleLive(\''+z.id+'\')">'+( z.live?'● AL AIRE':'○ Mostrar')+'</button>';
@@ -345,18 +339,11 @@ function renderList(app){
         h+='<button onclick="addFromPreset(\''+p.id+'\')">'+esc(p.name)+'<span class="preset-tag">'+({nameRole:'👤',title:'📺',ticker:'📰'}[p.type]||'')+'</span></button>';
       });
       h+='</div>';
-      h+='<div style="padding:6px 10px"><div class="sep" style="margin-top:2px">Plantilla para conductor</div>';
-      h+='<select onchange="setDefaultPreset(this.value)" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:7px 10px;color:#eee;font-size:12px;outline:none;font-family:inherit">';
-      h+='<option value=""'+(S.defaultPreset?'':' selected')+'>Sin plantilla (usa defaults)</option>';
-      S.presets.forEach(function(p){
-        h+='<option value="'+p.id+'"'+(S.defaultPreset===p.id?' selected':'')+'>'+esc(p.name)+'</option>';
-      });
-      h+='</select>';
-      h+='<div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap">';
+      h+='<div style="margin-top:4px;padding:0 10px;display:flex;gap:4px;flex-wrap:wrap">';
       S.presets.forEach(function(p){
         h+='<button class="btn-s danger" onclick="deletePreset(\''+p.id+'\')" style="font-size:9px">✕ '+esc(p.name)+'</button>';
       });
-      h+='</div></div>';
+      h+='</div>';
     }
   }
   app.innerHTML=h;
@@ -1025,46 +1012,9 @@ function startSocialTimer(){
   },(S.filmCfg.showTime+S.filmCfg.fadeTime)*1000);
 }
 
-// Conductor polling - auto-creates zócalos
-function pollConductor(){
-  fetch('/api/items').then(function(r){return r.json()}).then(function(items){
-    if(!items||!items.length)return;
-    var changed=false;
-    items.forEach(function(item){
-      // Check if already processed
-      if(S.zocalos.some(function(z){return z.conductorId===item.id}))return;
-      if(S.zocalos.length>=8)return;
-      // Get preset config or defaults
-      var preset=S.defaultPreset?S.presets.find(function(p){return p.id===S.defaultPreset}):null;
-      var nz;
-      if(item.type==='title'){
-        nz={id:uid(),type:'title',config:preset&&preset.type==='title'?JSON.parse(JSON.stringify(preset.config)):makeZ('title'),live:false,conductorId:item.id};
-        nz.config.text=item.text||'';nz.config.tag=item.tag||'';nz.config.subtitle=item.subtitle||'';
-      } else if(item.type==='nameRole'){
-        nz={id:uid(),type:'nameRole',config:preset&&preset.type==='nameRole'?JSON.parse(JSON.stringify(preset.config)):makeZ('nameRole'),live:false,conductorId:item.id};
-        nz.config.name=item.name||'';nz.config.role=item.role||'';nz.config.tag=item.tag||'';
-      } else {
-        nz={id:uid(),type:'title',config:preset&&preset.type==='title'?JSON.parse(JSON.stringify(preset.config)):makeZ('title'),live:false,conductorId:item.id};
-        nz.config.text=item.message||'';nz.config.tag='';
-      }
-      S.zocalos.push(nz);changed=true;
-    });
-    // Clean up processed items from server
-    if(changed){
-      save();
-      fetch('/api/items',{method:'DELETE'}).catch(function(){});
-      if(S.tab==='z'&&!S.editId)render();
-    }
-  }).catch(function(){});
-}
-setInterval(pollConductor,3000);
-pollConductor();
-
-function setDefaultPreset(id){S.defaultPreset=id||null;save()}
 function deletePreset(id){
   if(!confirm('¿Eliminar esta plantilla?'))return;
   S.presets=S.presets.filter(function(p){return p.id!==id});
-  if(S.defaultPreset===id)S.defaultPreset=null;
   save();render();
 }
 
