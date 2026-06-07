@@ -7,89 +7,46 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
+  :root {
+    --bg: #0d0d0d;
+    --panel: #161616;
+    --border: #2a2a2a;
+    --accent: #c8b87a;
+    --text: #e0d8c8;
+    --muted: #555;
+    --danger: #8b3a3a;
+  }
+
   body {
     width: 100vw;
     height: 100vh;
     background: transparent;
     overflow: hidden;
     font-family: 'Segoe UI', sans-serif;
+    color: var(--text);
   }
 
+  /* ── VISOR PRINCIPAL ── */
   #visor {
-    width: 100%;
-    height: 100%;
-    position: relative;
-    overflow: hidden;
+    position: absolute;
+    inset: 0;
     background: #111;
+    overflow: hidden;
   }
 
-  #imagen {
+  #imagen-actual {
     width: 100%;
     height: 100%;
     object-fit: cover;
     object-position: center;
     display: block;
     opacity: 0;
-    transition: opacity 0.4s ease;
+    transition: opacity 0.35s ease;
   }
 
-  #imagen.visible {
-    opacity: 1;
-  }
+  #imagen-actual.visible { opacity: 1; }
 
-  /* Panel de control — solo visible cuando el mouse está encima */
-  #panel {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: linear-gradient(transparent, rgba(0,0,0,0.85));
-    padding: 20px 16px 14px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    opacity: 0;
-    transition: opacity 0.25s ease;
-    z-index: 10;
-  }
-
-  body:hover #panel {
-    opacity: 1;
-  }
-
-  #btn-cargar {
-    background: #e8e0d0;
-    color: #111;
-    border: none;
-    padding: 8px 16px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    white-space: nowrap;
-    transition: background 0.15s;
-  }
-
-  #btn-cargar:hover {
-    background: #fff;
-  }
-
-  #nombre-archivo {
-    color: rgba(255,255,255,0.6);
-    font-size: 12px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    flex: 1;
-  }
-
-  #input-archivo {
-    display: none;
-  }
-
-  /* Zona de drop */
-  #drop-zone {
+  #placeholder {
     position: absolute;
     inset: 0;
     display: flex;
@@ -97,113 +54,590 @@
     align-items: center;
     justify-content: center;
     gap: 10px;
-    color: rgba(255,255,255,0.25);
+    color: var(--muted);
     pointer-events: none;
-    transition: opacity 0.3s;
   }
 
-  #drop-zone.oculto {
+  #placeholder svg { width: 44px; height: 44px; opacity: 0.4; }
+  #placeholder p { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; }
+
+  /* ── PANEL LATERAL ── */
+  #panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 260px;
+    background: var(--panel);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
     opacity: 0;
+    transform: translateX(260px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 20;
+    pointer-events: none;
   }
 
-  #drop-zone svg {
-    width: 48px;
-    height: 48px;
-    opacity: 0.3;
+  body:hover #panel {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: all;
   }
 
-  #drop-zone p {
-    font-size: 13px;
+  /* Tab bar */
+  #tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .tab {
+    flex: 1;
+    padding: 11px 0;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-align: center;
+    cursor: pointer;
+    color: var(--muted);
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+  }
+
+  .tab.activo {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  /* Secciones */
+  .seccion { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+  .seccion.activa { display: flex; }
+
+  /* ── CARPETAS ── */
+  #header-carpetas {
+    padding: 12px 12px 8px;
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  #input-nueva-carpeta {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 8px;
+    font-size: 12px;
+    outline: none;
+  }
+
+  #input-nueva-carpeta:focus { border-color: var(--accent); }
+
+  #lista-carpetas {
+    flex: 1;
+    overflow-y: auto;
+    padding: 6px 0;
+  }
+
+  .carpeta-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    cursor: pointer;
+    gap: 8px;
+    transition: background 0.1s;
+    border-left: 3px solid transparent;
+  }
+
+  .carpeta-item:hover { background: rgba(255,255,255,0.04); }
+
+  .carpeta-item.activa {
+    background: rgba(200,184,122,0.08);
+    border-left-color: var(--accent);
+  }
+
+  .carpeta-item svg { width: 15px; height: 15px; color: var(--accent); flex-shrink: 0; }
+  .carpeta-nombre { flex: 1; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .carpeta-count { font-size: 11px; color: var(--muted); }
+
+  .carpeta-eliminar {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 2px 4px;
+    font-size: 14px;
+    line-height: 1;
+    opacity: 0;
+    transition: opacity 0.1s, color 0.1s;
+  }
+
+  .carpeta-item:hover .carpeta-eliminar { opacity: 1; }
+  .carpeta-eliminar:hover { color: #e05555; }
+
+  /* ── IMÁGENES ── */
+  #header-imagenes {
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  #nombre-carpeta-actual {
+    flex: 1;
+    font-size: 12px;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  #grid-imagenes {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    align-content: start;
+  }
+
+  .thumb-wrap {
+    position: relative;
+    aspect-ratio: 16/9;
+    overflow: hidden;
+    cursor: pointer;
+    background: var(--bg);
+    border: 2px solid transparent;
+    transition: border-color 0.15s;
+  }
+
+  .thumb-wrap:hover { border-color: var(--accent); }
+  .thumb-wrap.activa { border-color: var(--accent); }
+
+  .thumb-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .thumb-eliminar {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    background: rgba(0,0,0,0.7);
+    border: none;
+    color: #fff;
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.1s;
+  }
+
+  .thumb-wrap:hover .thumb-eliminar { opacity: 1; }
+  .thumb-eliminar:hover { background: #e05555; }
+
+  #sin-imagenes {
+    grid-column: 1/-1;
+    text-align: center;
+    padding: 30px 10px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  /* Botones generales */
+  .btn {
+    background: var(--accent);
+    color: #111;
+    border: none;
+    padding: 6px 10px;
+    font-size: 11px;
+    font-weight: 700;
     letter-spacing: 0.05em;
     text-transform: uppercase;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s;
+    flex-shrink: 0;
   }
 
-  /* Highlight al arrastrar */
-  #visor.drag-over {
-    outline: 2px dashed rgba(255,255,255,0.3);
-    outline-offset: -6px;
+  .btn:hover { background: #e0d090; }
+  .btn.secundario { background: var(--border); color: var(--text); }
+  .btn.secundario:hover { background: #333; }
+
+  /* Drop overlay */
+  #drop-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(200,184,122,0.12);
+    border: 2px dashed var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 30;
+    transition: opacity 0.15s;
   }
+
+  #drop-overlay.visible { opacity: 1; }
+
+  /* Input file oculto */
+  #input-imagenes { display: none; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 </style>
 </head>
 <body>
 
+<!-- VISOR -->
 <div id="visor">
-  <div id="drop-zone">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-      <path d="M4 16l4-4 4 4 4-6 4 6"/>
+  <div id="placeholder">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
       <rect x="3" y="3" width="18" height="18" rx="2"/>
+      <path d="M3 15l5-5 4 4 3-3 6 6"/>
     </svg>
-    <p>Arrastrá una imagen aquí</p>
-    <p style="font-size:11px; opacity:0.6;">JPG · PNG · WEBP · AVIF · GIF · BMP · SVG</p>
+    <p>Seleccioná una imagen</p>
   </div>
-  <img id="imagen" alt="">
+  <img id="imagen-actual" alt="">
 </div>
 
+<!-- PANEL -->
 <div id="panel">
-  <button id="btn-cargar" onclick="document.getElementById('input-archivo').click()">
-    Cargar imagen
-  </button>
-  <span id="nombre-archivo">Sin imagen</span>
-  <input type="file" id="input-archivo"
-    accept="image/jpeg,image/png,image/webp,image/avif,image/gif,image/bmp,image/svg+xml">
+  <div id="tabs">
+    <div class="tab activo" data-tab="carpetas">Carpetas</div>
+    <div class="tab" data-tab="imagenes">Imágenes</div>
+  </div>
+
+  <!-- SECCIÓN CARPETAS -->
+  <div class="seccion activa" id="sec-carpetas">
+    <div id="header-carpetas">
+      <input type="text" id="input-nueva-carpeta" placeholder="Nueva carpeta..." maxlength="30">
+      <button class="btn" id="btn-crear-carpeta">+</button>
+    </div>
+    <div id="lista-carpetas"></div>
+  </div>
+
+  <!-- SECCIÓN IMÁGENES -->
+  <div class="seccion" id="sec-imagenes">
+    <div id="header-imagenes">
+      <span id="nombre-carpeta-actual">Sin carpeta</span>
+      <button class="btn secundario" id="btn-subir-imagen">Subir</button>
+    </div>
+    <div id="grid-imagenes"></div>
+  </div>
 </div>
+
+<!-- DROP OVERLAY -->
+<div id="drop-overlay">Soltá las imágenes aquí</div>
+
+<input type="file" id="input-imagenes"
+  accept="image/jpeg,image/png,image/webp,image/avif,image/gif,image/bmp,image/svg+xml"
+  multiple>
 
 <script>
-  const imagen = document.getElementById('imagen');
-  const dropZone = document.getElementById('drop-zone');
-  const nombreArchivo = document.getElementById('nombre-archivo');
-  const visor = document.getElementById('visor');
-  const inputArchivo = document.getElementById('input-archivo');
+  // ── ESTADO ──
+  let estado = {
+    carpetas: {},      // { id: { nombre, imagenes: [{id, nombre, dataUrl}] } }
+    carpetaActiva: null,
+    imagenActiva: null
+  };
 
-  function cargarImagen(archivo) {
-    if (!archivo || !archivo.type.startsWith('image/')) return;
-
-    const url = URL.createObjectURL(archivo);
-    imagen.classList.remove('visible');
-
-    setTimeout(() => {
-      imagen.src = url;
-      imagen.onload = () => {
-        imagen.classList.add('visible');
-        dropZone.classList.add('oculto');
-        nombreArchivo.textContent = archivo.name;
-      };
-    }, 200);
+  // ── PERSISTENCIA ──
+  function guardar() {
+    try {
+      localStorage.setItem('visor_obs', JSON.stringify(estado));
+    } catch(e) {
+      // localStorage puede estar deshabilitado en OBS
+    }
   }
 
-  // Carga por botón
-  inputArchivo.addEventListener('change', (e) => {
-    if (e.target.files[0]) cargarImagen(e.target.files[0]);
+  function cargar() {
+    try {
+      const data = localStorage.getItem('visor_obs');
+      if (data) estado = JSON.parse(data);
+    } catch(e) {}
+  }
+
+  // ── UTILS ──
+  function uid() {
+    return Math.random().toString(36).slice(2, 9);
+  }
+
+  function fileToDataUrl(file) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = e => resolve(e.target.result);
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // ── RENDER CARPETAS ──
+  function renderCarpetas() {
+    const lista = document.getElementById('lista-carpetas');
+    const ids = Object.keys(estado.carpetas);
+
+    if (ids.length === 0) {
+      lista.innerHTML = '<div style="padding:20px 12px;font-size:12px;color:var(--muted)">Creá una carpeta para empezar</div>';
+      return;
+    }
+
+    lista.innerHTML = ids.map(id => {
+      const c = estado.carpetas[id];
+      const activa = estado.carpetaActiva === id ? 'activa' : '';
+      const count = c.imagenes.length;
+      return `
+        <div class="carpeta-item ${activa}" data-id="${id}">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/>
+          </svg>
+          <span class="carpeta-nombre">${c.nombre}</span>
+          <span class="carpeta-count">${count}</span>
+          <button class="carpeta-eliminar" data-id="${id}" title="Eliminar">×</button>
+        </div>`;
+    }).join('');
+
+    lista.querySelectorAll('.carpeta-item').forEach(el => {
+      el.addEventListener('click', (e) => {
+        if (e.target.classList.contains('carpeta-eliminar')) return;
+        seleccionarCarpeta(el.dataset.id);
+      });
+    });
+
+    lista.querySelectorAll('.carpeta-eliminar').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        eliminarCarpeta(btn.dataset.id);
+      });
+    });
+  }
+
+  // ── RENDER IMÁGENES ──
+  function renderImagenes() {
+    const grid = document.getElementById('grid-imagenes');
+    const nombreEl = document.getElementById('nombre-carpeta-actual');
+
+    if (!estado.carpetaActiva || !estado.carpetas[estado.carpetaActiva]) {
+      nombreEl.textContent = 'Sin carpeta';
+      grid.innerHTML = '<div id="sin-imagenes">Seleccioná una carpeta</div>';
+      return;
+    }
+
+    const carpeta = estado.carpetas[estado.carpetaActiva];
+    nombreEl.textContent = carpeta.nombre;
+
+    if (carpeta.imagenes.length === 0) {
+      grid.innerHTML = '<div id="sin-imagenes">Sin imágenes — subí algunas</div>';
+      return;
+    }
+
+    grid.innerHTML = carpeta.imagenes.map(img => {
+      const activa = estado.imagenActiva === img.id ? 'activa' : '';
+      return `
+        <div class="thumb-wrap ${activa}" data-id="${img.id}" title="${img.nombre}">
+          <img src="${img.dataUrl}" alt="${img.nombre}">
+          <button class="thumb-eliminar" data-id="${img.id}">×</button>
+        </div>`;
+    }).join('');
+
+    grid.querySelectorAll('.thumb-wrap').forEach(el => {
+      el.addEventListener('click', (e) => {
+        if (e.target.classList.contains('thumb-eliminar')) return;
+        mostrarImagen(el.dataset.id);
+      });
+    });
+
+    grid.querySelectorAll('.thumb-eliminar').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        eliminarImagen(btn.dataset.id);
+      });
+    });
+  }
+
+  // ── ACCIONES ──
+  function crearCarpeta(nombre) {
+    if (!nombre.trim()) return;
+    const id = uid();
+    estado.carpetas[id] = { nombre: nombre.trim(), imagenes: [] };
+    guardar();
+    renderCarpetas();
+    seleccionarCarpeta(id);
+  }
+
+  function eliminarCarpeta(id) {
+    if (!confirm(`¿Eliminar la carpeta "${estado.carpetas[id]?.nombre}"?`)) return;
+    delete estado.carpetas[id];
+    if (estado.carpetaActiva === id) estado.carpetaActiva = null;
+    guardar();
+    renderCarpetas();
+    renderImagenes();
+  }
+
+  function seleccionarCarpeta(id) {
+    estado.carpetaActiva = id;
+    guardar();
+    renderCarpetas();
+    renderImagenes();
+    // Cambiar a tab de imágenes
+    cambiarTab('imagenes');
+  }
+
+  async function agregarImagenes(archivos) {
+    if (!estado.carpetaActiva) {
+      alert('Primero seleccioná una carpeta');
+      return;
+    }
+    const carpeta = estado.carpetas[estado.carpetaActiva];
+    for (const archivo of archivos) {
+      if (!archivo.type.startsWith('image/')) continue;
+      const dataUrl = await fileToDataUrl(archivo);
+      carpeta.imagenes.push({ id: uid(), nombre: archivo.name, dataUrl });
+    }
+    guardar();
+    renderCarpetas();
+    renderImagenes();
+  }
+
+  function mostrarImagen(imgId) {
+    const carpeta = estado.carpetas[estado.carpetaActiva];
+    if (!carpeta) return;
+    const img = carpeta.imagenes.find(i => i.id === imgId);
+    if (!img) return;
+
+    estado.imagenActiva = imgId;
+    const el = document.getElementById('imagen-actual');
+    el.classList.remove('visible');
+
+    setTimeout(() => {
+      el.src = img.dataUrl;
+      el.onload = () => {
+        el.classList.add('visible');
+        document.getElementById('placeholder').style.display = 'none';
+      };
+    }, 150);
+
+    guardar();
+    renderImagenes();
+  }
+
+  function eliminarImagen(imgId) {
+    const carpeta = estado.carpetas[estado.carpetaActiva];
+    if (!carpeta) return;
+    carpeta.imagenes = carpeta.imagenes.filter(i => i.id !== imgId);
+    if (estado.imagenActiva === imgId) {
+      estado.imagenActiva = null;
+      document.getElementById('imagen-actual').classList.remove('visible');
+      document.getElementById('placeholder').style.display = '';
+    }
+    guardar();
+    renderCarpetas();
+    renderImagenes();
+  }
+
+  function cambiarTab(tab) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('activo', t.dataset.tab === tab));
+    document.querySelectorAll('.seccion').forEach(s => s.classList.toggle('activa', s.id === `sec-${tab}`));
+  }
+
+  // ── EVENTOS ──
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => cambiarTab(tab.dataset.tab));
+  });
+
+  document.getElementById('btn-crear-carpeta').addEventListener('click', () => {
+    const input = document.getElementById('input-nueva-carpeta');
+    crearCarpeta(input.value);
+    input.value = '';
+  });
+
+  document.getElementById('input-nueva-carpeta').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      crearCarpeta(e.target.value);
+      e.target.value = '';
+    }
+  });
+
+  document.getElementById('btn-subir-imagen').addEventListener('click', () => {
+    document.getElementById('input-imagenes').click();
+  });
+
+  document.getElementById('input-imagenes').addEventListener('change', (e) => {
+    if (e.target.files.length) agregarImagenes(Array.from(e.target.files));
+    e.target.value = '';
   });
 
   // Drag & drop
-  visor.addEventListener('dragover', (e) => {
+  let dragCounter = 0;
+
+  document.addEventListener('dragenter', (e) => {
     e.preventDefault();
-    visor.classList.add('drag-over');
+    dragCounter++;
+    document.getElementById('drop-overlay').classList.add('visible');
   });
 
-  visor.addEventListener('dragleave', () => {
-    visor.classList.remove('drag-over');
-  });
-
-  visor.addEventListener('drop', (e) => {
-    e.preventDefault();
-    visor.classList.remove('drag-over');
-    const archivo = e.dataTransfer.files[0];
-    if (archivo) cargarImagen(archivo);
-  });
-
-  // Paste desde portapapeles (Ctrl+V)
-  document.addEventListener('paste', (e) => {
-    const items = e.clipboardData?.items;
-    if (!items) return;
-    for (const item of items) {
-      if (item.type.startsWith('image/')) {
-        cargarImagen(item.getAsFile());
-        break;
-      }
+  document.addEventListener('dragleave', () => {
+    dragCounter--;
+    if (dragCounter <= 0) {
+      dragCounter = 0;
+      document.getElementById('drop-overlay').classList.remove('visible');
     }
   });
+
+  document.addEventListener('dragover', (e) => e.preventDefault());
+
+  document.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dragCounter = 0;
+    document.getElementById('drop-overlay').classList.remove('visible');
+    const archivos = Array.from(e.dataTransfer.files);
+    agregarImagenes(archivos);
+  });
+
+  // Paste
+  document.addEventListener('paste', (e) => {
+    const items = Array.from(e.clipboardData?.items || []);
+    const archivos = items
+      .filter(i => i.type.startsWith('image/'))
+      .map(i => i.getAsFile());
+    if (archivos.length) agregarImagenes(archivos);
+  });
+
+  // ── INIT ──
+  cargar();
+  renderCarpetas();
+  renderImagenes();
+
+  // Restaurar imagen activa si había una
+  if (estado.imagenActiva && estado.carpetaActiva) {
+    const carpeta = estado.carpetas[estado.carpetaActiva];
+    const img = carpeta?.imagenes.find(i => i.id === estado.imagenActiva);
+    if (img) {
+      const el = document.getElementById('imagen-actual');
+      el.src = img.dataUrl;
+      el.classList.add('visible');
+      document.getElementById('placeholder').style.display = 'none';
+    }
+  }
 </script>
 </body>
 </html>
