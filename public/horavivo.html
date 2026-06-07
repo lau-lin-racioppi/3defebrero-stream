@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{
+  width:1920px;height:1080px;
+  overflow:hidden;
+  background:#000;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family:'DM Sans',sans-serif;
+}
+
+/* ── CONTENEDOR CENTRAL ── */
+#wrap{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:40px;
+}
+
+/* ── BADGE EN VIVO / EN EL CORTE ── */
+#badge{
+  display:flex;
+  align-items:center;
+  gap:18px;
+  padding:18px 60px 18px 44px;
+  border-radius:12px;
+  background:rgba(204,20,20,.92);
+  opacity:0;
+  transition:opacity .4s, background .5s;
+  min-width:420px;
+  justify-content:center;
+}
+#badge.on{ opacity:1 }
+#badge.corte{ background:rgba(25,80,170,.92) }
+
+.dot{
+  width:22px;height:22px;border-radius:50%;
+  background:#ff4444;
+  flex-shrink:0;
+  animation:pulse 1.5s ease-in-out infinite;
+}
+.corte .dot{ background:#88bbff; animation:none }
+
+@keyframes pulse{
+  0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(255,68,68,.6)}
+  50%{opacity:.7;box-shadow:0 0 0 12px rgba(255,68,68,0)}
+}
+
+#badge-text{
+  font-size:72px;
+  font-weight:900;
+  color:#fff;
+  letter-spacing:6px;
+  text-transform:uppercase;
+  line-height:1;
+}
+
+/* ── RELOJ ── */
+#clock{
+  font-size:220px;
+  font-weight:900;
+  color:#fff;
+  letter-spacing:8px;
+  line-height:1;
+  opacity:0;
+  transition:opacity .4s;
+  text-shadow:0 4px 32px rgba(0,0,0,.5);
+}
+#clock.on{ opacity:1 }
+
+/* ── HORA ACTUAL ── */
+#hora-wrap{
+  padding:14px 60px;
+  background:rgba(20,60,160,.85);
+  border-radius:12px;
+  opacity:0;
+  transition:opacity .4s;
+}
+#hora-wrap.on{ opacity:1 }
+#hora{
+  font-size:96px;
+  font-weight:700;
+  color:#fff;
+  letter-spacing:4px;
+  line-height:1;
+  text-align:center;
+}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="badge">
+    <span class="dot"></span>
+    <span id="badge-text">EN VIVO</span>
+  </div>
+  <div id="clock">00:00:00</div>
+  <div id="hora-wrap">
+    <div id="hora">--:--</div>
+  </div>
+</div>
+
+<script>
+// ── ESTADO ──
+var clockTimer = null;
+var horaTimer  = null;
+var badgeOn    = false;
+var clockOn    = false;
+
+// ── HORA ACTUAL (siempre visible cuando hay reloj) ──
+function tickHora(){
+  var n = new Date();
+  document.getElementById('hora').textContent =
+    String(n.getHours()).padStart(2,'0') + ':' +
+    String(n.getMinutes()).padStart(2,'0');
+}
+
+// ── BADGE ──
+function showBadge(text, isCorte){
+  var el = document.getElementById('badge');
+  document.getElementById('badge-text').textContent = text || 'EN VIVO';
+  if(isCorte){ el.classList.add('corte'); el.querySelector('.dot').style.animation='none'; }
+  else        { el.classList.remove('corte'); el.querySelector('.dot').style.animation=''; }
+  el.classList.add('on');
+  badgeOn = true;
+}
+function hideBadge(){
+  document.getElementById('badge').classList.remove('on');
+  badgeOn = false;
+}
+
+// ── RELOJ COUNTDOWN ──
+function showClock(cfg){
+  // Reloj cuenta regresiva — mostramos el valor que viene del panel
+  var el = document.getElementById('clock');
+  el.classList.add('on');
+  document.getElementById('hora-wrap').classList.add('on');
+  // Tick hora actual
+  tickHora();
+  if(horaTimer) clearInterval(horaTimer);
+  horaTimer = setInterval(tickHora, 10000);
+  clockOn = true;
+}
+function hideClock(){
+  document.getElementById('clock').classList.remove('on');
+  document.getElementById('hora-wrap').classList.remove('on');
+  if(horaTimer) clearInterval(horaTimer);
+  clockOn = false;
+}
+
+// ── BROADCASTCHANNEL — mismo canal que el overlay ──
+var bc = new BroadcastChannel('3df-stream');
+bc.onmessage = function(e){
+  var d = e.data;
+  if(!d || !d.action) return;
+
+  if(d.action === 'showClock')  showClock(d.cfg);
+  if(d.action === 'hideClock')  hideClock();
+  if(d.action === 'showLive'){
+    var isCorte = d.cfg && d.cfg.text && d.cfg.text.indexOf('CORTE') >= 0;
+    showBadge(d.cfg ? d.cfg.text : 'EN VIVO', isCorte);
+  }
+  if(d.action === 'hideLive')   hideBadge();
+  if(d.action === 'updateLive'){
+    var isCorte = d.cfg && d.cfg.text && d.cfg.text.indexOf('CORTE') >= 0;
+    showBadge(d.cfg ? d.cfg.text : 'EN VIVO', isCorte);
+  }
+  if(d.action === 'hideAll'){
+    hideBadge();
+    hideClock();
+  }
+
+  // ── SINCRONIZAR COUNTDOWN ──
+  // El overlay recibe el valor del countdown via la escena de OBS
+  // Acá escuchamos mensajes custom del panel (si los hay)
+  if(d.action === 'clockTick' && d.value !== undefined){
+    document.getElementById('clock').textContent = d.value;
+  }
+};
+
+// ── SINCRONIZAR EL COUNTDOWN CON EL OVERLAY ──
+// El Browser Source del overlay y este corren en contextos separados,
+// pero comparten el BroadcastChannel. Para sincronizar el contador
+// el panel tiene que emitir 'clockTick' cada segundo con el valor actual.
+// Como alternativa, este archivo reproduce el mismo reloj independientemente.
+
+// Reloj cuenta regresiva autónomo (arranca en 00:00:00, igual que el overlay)
+var countSec = 0;
+var countTimer = null;
+
+function startCount(){
+  countSec = 0;
+  if(countTimer) clearInterval(countTimer);
+  document.getElementById('clock').textContent = '00:00:00';
+  countTimer = setInterval(function(){
+    countSec++;
+    var h = Math.floor(countSec/3600);
+    var m = Math.floor((countSec%3600)/60);
+    var s = countSec%60;
+    document.getElementById('clock').textContent =
+      String(h).padStart(2,'0')+':'+
+      String(m).padStart(2,'0')+':'+
+      String(s).padStart(2,'0');
+  }, 1000);
+}
+
+// Arrancar el contador cuando se muestra el reloj
+var origShowClock = showClock;
+showClock = function(cfg){
+  origShowClock(cfg);
+  startCount();
+};
+var origHideClock = hideClock;
+hideClock = function(){
+  origHideClock();
+  if(countTimer){ clearInterval(countTimer); countTimer=null; }
+  countSec=0;
+  document.getElementById('clock').textContent='00:00:00';
+};
+</script>
+</body>
+</html>
