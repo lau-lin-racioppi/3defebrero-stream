@@ -664,8 +664,7 @@ function updC(key,val){
   if(key.startsWith('f_')){var fk=key.slice(2);S.filmCfg[fk]=val;save();if(S.filminaLive)sendFilmina();return}
   if(key.startsWith('m_')){var mk=key.slice(2);S.moscaCfg[mk]=val;save();if(S.moscaLive)sendMosca();return}
   if(key.startsWith('c_')){var ck=key.slice(2);S.clockCfg[ck]=val;save();if(S.clockLive)sendClock();return}
-  if(key.startsWith('lv_')){var lk=key.slice(3);S.liveCfg[lk]=val;save();if(S.liveLive)sendLive();
-  if(S.gorritoLive)sendGorrito();return}
+  if(key.startsWith('lv_')){var lk=key.slice(3);S.liveCfg[lk]=val;save();if(S.liveLive)sendLive();return}
   if(key.startsWith('go_')){var gk=key.slice(3);S.gorritoCfg[gk]=val;save();if(S.gorritoLive)sendGorrito();return}
   var z=S.zocalos.find(function(x){return x.id===S.editId});
   if(!z)return;
@@ -683,8 +682,8 @@ function updFull(key,val){
   if(key.startsWith('f_')){var fk=key.slice(2);S.filmCfg[fk]=val;save();if(S.filminaLive)sendFilmina();render();return}
   if(key.startsWith('m_')){var mk=key.slice(2);S.moscaCfg[mk]=val;save();if(S.moscaLive)sendMosca();render();return}
   if(key.startsWith('c_')){var ck=key.slice(2);S.clockCfg[ck]=val;save();if(S.clockLive)sendClock();render();return}
-  if(key.startsWith('lv_')){var lk=key.slice(3);S.liveCfg[lk]=val;save();if(S.liveLive)sendLive();
-  if(S.gorritoLive)sendGorrito();render();return}
+  if(key.startsWith('lv_')){var lk=key.slice(3);S.liveCfg[lk]=val;save();if(S.liveLive)sendLive();render();return}
+  if(key.startsWith('go_')){var gk=key.slice(3);S.gorritoCfg[gk]=val;save();if(S.gorritoLive)sendGorrito();render();return}
   var z=S.zocalos.find(function(x){return x.id===S.editId});
   if(!z)return;
   z.config[key]=val;save();
