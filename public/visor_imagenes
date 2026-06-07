@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visor OBS</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    width: 100vw;
+    height: 100vh;
+    background: transparent;
+    overflow: hidden;
+    font-family: 'Segoe UI', sans-serif;
+  }
+
+  #visor {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    background: #111;
+  }
+
+  #imagen {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+
+  #imagen.visible {
+    opacity: 1;
+  }
+
+  /* Panel de control — solo visible cuando el mouse está encima */
+  #panel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(transparent, rgba(0,0,0,0.85));
+    padding: 20px 16px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    z-index: 10;
+  }
+
+  body:hover #panel {
+    opacity: 1;
+  }
+
+  #btn-cargar {
+    background: #e8e0d0;
+    color: #111;
+    border: none;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    transition: background 0.15s;
+  }
+
+  #btn-cargar:hover {
+    background: #fff;
+  }
+
+  #nombre-archivo {
+    color: rgba(255,255,255,0.6);
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+  }
+
+  #input-archivo {
+    display: none;
+  }
+
+  /* Zona de drop */
+  #drop-zone {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: rgba(255,255,255,0.25);
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+
+  #drop-zone.oculto {
+    opacity: 0;
+  }
+
+  #drop-zone svg {
+    width: 48px;
+    height: 48px;
+    opacity: 0.3;
+  }
+
+  #drop-zone p {
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  /* Highlight al arrastrar */
+  #visor.drag-over {
+    outline: 2px dashed rgba(255,255,255,0.3);
+    outline-offset: -6px;
+  }
+</style>
+</head>
+<body>
+
+<div id="visor">
+  <div id="drop-zone">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M4 16l4-4 4 4 4-6 4 6"/>
+      <rect x="3" y="3" width="18" height="18" rx="2"/>
+    </svg>
+    <p>Arrastrá una imagen aquí</p>
+    <p style="font-size:11px; opacity:0.6;">JPG · PNG · WEBP · AVIF · GIF · BMP · SVG</p>
+  </div>
+  <img id="imagen" alt="">
+</div>
+
+<div id="panel">
+  <button id="btn-cargar" onclick="document.getElementById('input-archivo').click()">
+    Cargar imagen
+  </button>
+  <span id="nombre-archivo">Sin imagen</span>
+  <input type="file" id="input-archivo"
+    accept="image/jpeg,image/png,image/webp,image/avif,image/gif,image/bmp,image/svg+xml">
+</div>
+
+<script>
+  const imagen = document.getElementById('imagen');
+  const dropZone = document.getElementById('drop-zone');
+  const nombreArchivo = document.getElementById('nombre-archivo');
+  const visor = document.getElementById('visor');
+  const inputArchivo = document.getElementById('input-archivo');
+
+  function cargarImagen(archivo) {
+    if (!archivo || !archivo.type.startsWith('image/')) return;
+
+    const url = URL.createObjectURL(archivo);
+    imagen.classList.remove('visible');
+
+    setTimeout(() => {
+      imagen.src = url;
+      imagen.onload = () => {
+        imagen.classList.add('visible');
+        dropZone.classList.add('oculto');
+        nombreArchivo.textContent = archivo.name;
+      };
+    }, 200);
+  }
+
+  // Carga por botón
+  inputArchivo.addEventListener('change', (e) => {
+    if (e.target.files[0]) cargarImagen(e.target.files[0]);
+  });
+
+  // Drag & drop
+  visor.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    visor.classList.add('drag-over');
+  });
+
+  visor.addEventListener('dragleave', () => {
+    visor.classList.remove('drag-over');
+  });
+
+  visor.addEventListener('drop', (e) => {
+    e.preventDefault();
+    visor.classList.remove('drag-over');
+    const archivo = e.dataTransfer.files[0];
+    if (archivo) cargarImagen(archivo);
+  });
+
+  // Paste desde portapapeles (Ctrl+V)
+  document.addEventListener('paste', (e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const item of items) {
+      if (item.type.startsWith('image/')) {
+        cargarImagen(item.getAsFile());
+        break;
+      }
+    }
+  });
+</script>
+</body>
+</html>
