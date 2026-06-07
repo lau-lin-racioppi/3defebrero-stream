@@ -10,70 +10,58 @@ html,body{
   overflow:hidden;
   background:#000;
   display:flex;
-  align-items:center;
-  justify-content:center;
-  font-family:'DM Sans',sans-serif;
-}
-#wrap{
-  display:flex;
   flex-direction:column;
   align-items:center;
   justify-content:center;
-  gap:50px;
+  gap:60px;
+  font-family:'DM Sans',sans-serif;
 }
 
-/* BADGE */
+/* BADGE EN VIVO */
 #badge{
-  display:flex;align-items:center;gap:20px;
-  padding:20px 70px 20px 50px;
-  border-radius:14px;
-  background:rgba(204,20,20,.92);
+  display:flex;align-items:center;gap:16px;
+  padding:18px 60px 18px 44px;
+  border-radius:10px;
+  background:rgba(204,20,20,.9);
   transition:background .5s;
 }
 .dot{
-  width:24px;height:24px;border-radius:50%;
+  width:20px;height:20px;border-radius:50%;
   background:#ff4444;flex-shrink:0;
   animation:pulse 1.5s ease-in-out infinite;
 }
 @keyframes pulse{
   0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(255,68,68,.6)}
-  50%{opacity:.7;box-shadow:0 0 0 14px rgba(255,68,68,0)}
+  50%{opacity:.7;box-shadow:0 0 0 10px rgba(255,68,68,0)}
 }
 #badge-text{
-  font-size:80px;font-weight:900;color:#fff;
-  letter-spacing:7px;text-transform:uppercase;line-height:1;
-}
-
-/* CONTADOR */
-#clock{
-  font-size:230px;font-weight:900;color:#fff;
-  letter-spacing:6px;line-height:1;
-  text-shadow:0 4px 40px rgba(0,0,0,.4);
+  font-size:72px;font-weight:900;color:#fff;
+  letter-spacing:6px;text-transform:uppercase;line-height:1;
 }
 
 /* HORA */
 #hora-wrap{
-  padding:16px 70px;
+  padding:16px 60px;
   background:rgba(20,60,160,.88);
-  border-radius:14px;
+  border-radius:10px;
 }
 #hora{
-  font-size:100px;font-weight:700;color:#fff;
-  letter-spacing:5px;line-height:1;text-align:center;
+  font-size:180px;font-weight:900;color:#fff;
+  letter-spacing:4px;line-height:1;text-align:center;
 }
 </style>
 </head>
 <body>
-<div id="wrap">
-  <div id="badge">
-    <span class="dot" id="dot"></span>
-    <span id="badge-text">EN VIVO</span>
-  </div>
-  <div id="clock">00:00:00</div>
-  <div id="hora-wrap">
-    <div id="hora">--:--</div>
-  </div>
+
+<div id="badge">
+  <span class="dot" id="dot"></span>
+  <span id="badge-text">EN VIVO</span>
 </div>
+
+<div id="hora-wrap">
+  <div id="hora">--:--</div>
+</div>
+
 <script>
 // ── HORA ACTUAL ──
 function tickHora(){
@@ -84,35 +72,17 @@ function tickHora(){
 tickHora();
 setInterval(tickHora,10000);
 
-// ── CONTADOR ──
-var countSec=0, countTimer=null;
-function startCount(){
-  countSec=0;
-  if(countTimer)clearInterval(countTimer);
-  document.getElementById('clock').textContent='00:00:00';
-  countTimer=setInterval(function(){
-    countSec++;
-    var h=Math.floor(countSec/3600),m=Math.floor((countSec%3600)/60),s=countSec%60;
-    document.getElementById('clock').textContent=
-      String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
-  },1000);
-}
-function stopCount(){if(countTimer){clearInterval(countTimer);countTimer=null;}countSec=0;document.getElementById('clock').textContent='00:00:00';}
-
 // ── BADGE ──
 function setBadge(text,isCorte){
   document.getElementById('badge-text').textContent=text;
-  var bg=isCorte?'rgba(25,80,170,.92)':'rgba(204,20,20,.92)';
-  document.getElementById('badge').style.background=bg;
+  document.getElementById('badge').style.background=isCorte?'rgba(25,80,170,.92)':'rgba(204,20,20,.9)';
   document.getElementById('dot').style.animation=isCorte?'none':'pulse 1.5s ease-in-out infinite';
 }
-setBadge('EN VIVO',false);
 
-// ── BROADCASTCHANNEL (mismo canal que panel y overlay) ──
+// ── BROADCASTCHANNEL ──
 var bc=new BroadcastChannel('3df-stream');
 bc.onmessage=function(e){
   var d=e.data;if(!d||!d.action)return;
-  if(d.action==='showClock'||d.action==='hideClock'){}  // contador autónomo
   if(d.action==='showLive'){
     var t=d.cfg&&d.cfg.text?d.cfg.text:'EN VIVO';
     setBadge(t,t.indexOf('CORTE')>=0);
@@ -122,45 +92,35 @@ bc.onmessage=function(e){
     setBadge(t,t.indexOf('CORTE')>=0);
   }
   if(d.action==='hideLive') setBadge('EN VIVO',false);
-  if(d.action==='hideAll')  {setBadge('EN VIVO',false);stopCount();}
 };
 
-// ── OBS WEBSOCKET (igual que el panel, para detectar escena de corte) ──
-var obsWS=null,obsCorteScenes=[];
-// Leer escenas de corte desde localStorage (las guarda el panel)
-try{
-  var st=JSON.parse(localStorage.getItem('3df_state'));
-  if(st&&st.cs)obsCorteScenes=st.cs;
-}catch(e){}
+// ── OBS WEBSOCKET (detectar escena de corte) ──
+var obsCorteScenes=[];
+try{var st=JSON.parse(localStorage.getItem('3df_state'));if(st&&st.cs)obsCorteScenes=st.cs;}catch(e){}
 
 function obsConnect(){
   try{
-    obsWS=new WebSocket('ws://localhost:4455');
-    obsWS.onopen=function(){
-      obsWS.send(JSON.stringify({op:1,d:{rpcVersion:1}}));
-    };
-    obsWS.onmessage=function(e){
+    var ws=new WebSocket('ws://localhost:4455');
+    ws.onopen=function(){ws.send(JSON.stringify({op:1,d:{rpcVersion:1}}));};
+    ws.onmessage=function(e){
       var msg=JSON.parse(e.data);
-      if(msg.op===2){obsWS.send(JSON.stringify({op:6,d:{requestType:'GetCurrentProgramScene',requestId:'s1'}}));}
+      if(msg.op===2){ws.send(JSON.stringify({op:6,d:{requestType:'GetCurrentProgramScene',requestId:'s1'}}));}
       if(msg.op===5&&msg.d&&msg.d.eventType==='CurrentProgramSceneChanged'){
-        var scene=msg.d.eventData&&msg.d.eventData.sceneName||'';
-        var isCorte=obsCorteScenes.some(function(cs){return cs&&scene.toLowerCase().indexOf(cs.toLowerCase())>=0;});
-        setBadge(isCorte?'EN EL CORTE':'EN VIVO',isCorte);
+        var sc=msg.d.eventData&&msg.d.eventData.sceneName||'';
+        var ic=obsCorteScenes.some(function(c){return c&&sc.toLowerCase().indexOf(c.toLowerCase())>=0;});
+        setBadge(ic?'EN EL CORTE':'EN VIVO',ic);
       }
       if(msg.op===7&&msg.d&&msg.d.requestType==='GetCurrentProgramScene'){
-        var scene=msg.d.responseData&&msg.d.responseData.currentProgramSceneName||'';
-        var isCorte=obsCorteScenes.some(function(cs){return cs&&scene.toLowerCase().indexOf(cs.toLowerCase())>=0;});
-        setBadge(isCorte?'EN EL CORTE':'EN VIVO',isCorte);
+        var sc=msg.d.responseData&&msg.d.responseData.currentProgramSceneName||'';
+        var ic=obsCorteScenes.some(function(c){return c&&sc.toLowerCase().indexOf(c.toLowerCase())>=0;});
+        setBadge(ic?'EN EL CORTE':'EN VIVO',ic);
       }
     };
-    obsWS.onclose=function(){setTimeout(obsConnect,5000);};
-    obsWS.onerror=function(){};
+    ws.onclose=function(){setTimeout(obsConnect,5000);};
+    ws.onerror=function(){};
   }catch(ex){}
 }
 obsConnect();
-
-// Arrancar contador al cargar
-startCount();
 </script>
 </body>
 </html>
