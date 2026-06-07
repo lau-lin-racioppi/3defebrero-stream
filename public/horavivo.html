@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@700;900&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{
@@ -14,90 +14,59 @@ html,body{
   justify-content:center;
   font-family:'DM Sans',sans-serif;
 }
-
-/* ── CONTENEDOR CENTRAL ── */
 #wrap{
   display:flex;
   flex-direction:column;
   align-items:center;
   justify-content:center;
-  gap:40px;
+  gap:50px;
 }
 
-/* ── BADGE EN VIVO / EN EL CORTE ── */
+/* BADGE */
 #badge{
-  display:flex;
-  align-items:center;
-  gap:18px;
-  padding:18px 60px 18px 44px;
-  border-radius:12px;
+  display:flex;align-items:center;gap:20px;
+  padding:20px 70px 20px 50px;
+  border-radius:14px;
   background:rgba(204,20,20,.92);
-  opacity:0;
-  transition:opacity .4s, background .5s;
-  min-width:420px;
-  justify-content:center;
+  transition:background .5s;
 }
-#badge.on{ opacity:1 }
-#badge.corte{ background:rgba(25,80,170,.92) }
-
 .dot{
-  width:22px;height:22px;border-radius:50%;
-  background:#ff4444;
-  flex-shrink:0;
+  width:24px;height:24px;border-radius:50%;
+  background:#ff4444;flex-shrink:0;
   animation:pulse 1.5s ease-in-out infinite;
 }
-.corte .dot{ background:#88bbff; animation:none }
-
 @keyframes pulse{
   0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(255,68,68,.6)}
-  50%{opacity:.7;box-shadow:0 0 0 12px rgba(255,68,68,0)}
+  50%{opacity:.7;box-shadow:0 0 0 14px rgba(255,68,68,0)}
 }
-
 #badge-text{
-  font-size:72px;
-  font-weight:900;
-  color:#fff;
-  letter-spacing:6px;
-  text-transform:uppercase;
-  line-height:1;
+  font-size:80px;font-weight:900;color:#fff;
+  letter-spacing:7px;text-transform:uppercase;line-height:1;
 }
 
-/* ── RELOJ ── */
+/* CONTADOR */
 #clock{
-  font-size:220px;
-  font-weight:900;
-  color:#fff;
-  letter-spacing:8px;
-  line-height:1;
-  opacity:0;
-  transition:opacity .4s;
-  text-shadow:0 4px 32px rgba(0,0,0,.5);
+  font-size:230px;font-weight:900;color:#fff;
+  letter-spacing:6px;line-height:1;
+  text-shadow:0 4px 40px rgba(0,0,0,.4);
 }
-#clock.on{ opacity:1 }
 
-/* ── HORA ACTUAL ── */
+/* HORA */
 #hora-wrap{
-  padding:14px 60px;
-  background:rgba(20,60,160,.85);
-  border-radius:12px;
-  opacity:0;
-  transition:opacity .4s;
+  padding:16px 70px;
+  background:rgba(20,60,160,.88);
+  border-radius:14px;
 }
-#hora-wrap.on{ opacity:1 }
 #hora{
-  font-size:96px;
-  font-weight:700;
-  color:#fff;
-  letter-spacing:4px;
-  line-height:1;
-  text-align:center;
+  font-size:100px;font-weight:700;color:#fff;
+  letter-spacing:5px;line-height:1;text-align:center;
 }
 </style>
 </head>
 <body>
 <div id="wrap">
   <div id="badge">
-    <span class="dot"></span>
+    <span class="dot" id="dot"></span>
     <span id="badge-text">EN VIVO</span>
   </div>
   <div id="clock">00:00:00</div>
@@ -105,124 +74,93 @@ html,body{
     <div id="hora">--:--</div>
   </div>
 </div>
-
 <script>
-// ── ESTADO ──
-var clockTimer = null;
-var horaTimer  = null;
-var badgeOn    = false;
-var clockOn    = false;
-
-// ── HORA ACTUAL (siempre visible cuando hay reloj) ──
+// ── HORA ACTUAL ──
 function tickHora(){
-  var n = new Date();
-  document.getElementById('hora').textContent =
-    String(n.getHours()).padStart(2,'0') + ':' +
-    String(n.getMinutes()).padStart(2,'0');
+  var n=new Date();
+  document.getElementById('hora').textContent=
+    String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
 }
+tickHora();
+setInterval(tickHora,10000);
+
+// ── CONTADOR ──
+var countSec=0, countTimer=null;
+function startCount(){
+  countSec=0;
+  if(countTimer)clearInterval(countTimer);
+  document.getElementById('clock').textContent='00:00:00';
+  countTimer=setInterval(function(){
+    countSec++;
+    var h=Math.floor(countSec/3600),m=Math.floor((countSec%3600)/60),s=countSec%60;
+    document.getElementById('clock').textContent=
+      String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  },1000);
+}
+function stopCount(){if(countTimer){clearInterval(countTimer);countTimer=null;}countSec=0;document.getElementById('clock').textContent='00:00:00';}
 
 // ── BADGE ──
-function showBadge(text, isCorte){
-  var el = document.getElementById('badge');
-  document.getElementById('badge-text').textContent = text || 'EN VIVO';
-  if(isCorte){ el.classList.add('corte'); el.querySelector('.dot').style.animation='none'; }
-  else        { el.classList.remove('corte'); el.querySelector('.dot').style.animation=''; }
-  el.classList.add('on');
-  badgeOn = true;
+function setBadge(text,isCorte){
+  document.getElementById('badge-text').textContent=text;
+  var bg=isCorte?'rgba(25,80,170,.92)':'rgba(204,20,20,.92)';
+  document.getElementById('badge').style.background=bg;
+  document.getElementById('dot').style.animation=isCorte?'none':'pulse 1.5s ease-in-out infinite';
 }
-function hideBadge(){
-  document.getElementById('badge').classList.remove('on');
-  badgeOn = false;
-}
+setBadge('EN VIVO',false);
 
-// ── RELOJ COUNTDOWN ──
-function showClock(cfg){
-  // Reloj cuenta regresiva — mostramos el valor que viene del panel
-  var el = document.getElementById('clock');
-  el.classList.add('on');
-  document.getElementById('hora-wrap').classList.add('on');
-  // Tick hora actual
-  tickHora();
-  if(horaTimer) clearInterval(horaTimer);
-  horaTimer = setInterval(tickHora, 10000);
-  clockOn = true;
-}
-function hideClock(){
-  document.getElementById('clock').classList.remove('on');
-  document.getElementById('hora-wrap').classList.remove('on');
-  if(horaTimer) clearInterval(horaTimer);
-  clockOn = false;
-}
-
-// ── BROADCASTCHANNEL — mismo canal que el overlay ──
-var bc = new BroadcastChannel('3df-stream');
-bc.onmessage = function(e){
-  var d = e.data;
-  if(!d || !d.action) return;
-
-  if(d.action === 'showClock')  showClock(d.cfg);
-  if(d.action === 'hideClock')  hideClock();
-  if(d.action === 'showLive'){
-    var isCorte = d.cfg && d.cfg.text && d.cfg.text.indexOf('CORTE') >= 0;
-    showBadge(d.cfg ? d.cfg.text : 'EN VIVO', isCorte);
+// ── BROADCASTCHANNEL (mismo canal que panel y overlay) ──
+var bc=new BroadcastChannel('3df-stream');
+bc.onmessage=function(e){
+  var d=e.data;if(!d||!d.action)return;
+  if(d.action==='showClock'||d.action==='hideClock'){}  // contador autónomo
+  if(d.action==='showLive'){
+    var t=d.cfg&&d.cfg.text?d.cfg.text:'EN VIVO';
+    setBadge(t,t.indexOf('CORTE')>=0);
   }
-  if(d.action === 'hideLive')   hideBadge();
-  if(d.action === 'updateLive'){
-    var isCorte = d.cfg && d.cfg.text && d.cfg.text.indexOf('CORTE') >= 0;
-    showBadge(d.cfg ? d.cfg.text : 'EN VIVO', isCorte);
+  if(d.action==='updateLive'){
+    var t=d.text||'EN VIVO';
+    setBadge(t,t.indexOf('CORTE')>=0);
   }
-  if(d.action === 'hideAll'){
-    hideBadge();
-    hideClock();
-  }
-
-  // ── SINCRONIZAR COUNTDOWN ──
-  // El overlay recibe el valor del countdown via la escena de OBS
-  // Acá escuchamos mensajes custom del panel (si los hay)
-  if(d.action === 'clockTick' && d.value !== undefined){
-    document.getElementById('clock').textContent = d.value;
-  }
+  if(d.action==='hideLive') setBadge('EN VIVO',false);
+  if(d.action==='hideAll')  {setBadge('EN VIVO',false);stopCount();}
 };
 
-// ── SINCRONIZAR EL COUNTDOWN CON EL OVERLAY ──
-// El Browser Source del overlay y este corren en contextos separados,
-// pero comparten el BroadcastChannel. Para sincronizar el contador
-// el panel tiene que emitir 'clockTick' cada segundo con el valor actual.
-// Como alternativa, este archivo reproduce el mismo reloj independientemente.
+// ── OBS WEBSOCKET (igual que el panel, para detectar escena de corte) ──
+var obsWS=null,obsCorteScenes=[];
+// Leer escenas de corte desde localStorage (las guarda el panel)
+try{
+  var st=JSON.parse(localStorage.getItem('3df_state'));
+  if(st&&st.cs)obsCorteScenes=st.cs;
+}catch(e){}
 
-// Reloj cuenta regresiva autónomo (arranca en 00:00:00, igual que el overlay)
-var countSec = 0;
-var countTimer = null;
-
-function startCount(){
-  countSec = 0;
-  if(countTimer) clearInterval(countTimer);
-  document.getElementById('clock').textContent = '00:00:00';
-  countTimer = setInterval(function(){
-    countSec++;
-    var h = Math.floor(countSec/3600);
-    var m = Math.floor((countSec%3600)/60);
-    var s = countSec%60;
-    document.getElementById('clock').textContent =
-      String(h).padStart(2,'0')+':'+
-      String(m).padStart(2,'0')+':'+
-      String(s).padStart(2,'0');
-  }, 1000);
+function obsConnect(){
+  try{
+    obsWS=new WebSocket('ws://localhost:4455');
+    obsWS.onopen=function(){
+      obsWS.send(JSON.stringify({op:1,d:{rpcVersion:1}}));
+    };
+    obsWS.onmessage=function(e){
+      var msg=JSON.parse(e.data);
+      if(msg.op===2){obsWS.send(JSON.stringify({op:6,d:{requestType:'GetCurrentProgramScene',requestId:'s1'}}));}
+      if(msg.op===5&&msg.d&&msg.d.eventType==='CurrentProgramSceneChanged'){
+        var scene=msg.d.eventData&&msg.d.eventData.sceneName||'';
+        var isCorte=obsCorteScenes.some(function(cs){return cs&&scene.toLowerCase().indexOf(cs.toLowerCase())>=0;});
+        setBadge(isCorte?'EN EL CORTE':'EN VIVO',isCorte);
+      }
+      if(msg.op===7&&msg.d&&msg.d.requestType==='GetCurrentProgramScene'){
+        var scene=msg.d.responseData&&msg.d.responseData.currentProgramSceneName||'';
+        var isCorte=obsCorteScenes.some(function(cs){return cs&&scene.toLowerCase().indexOf(cs.toLowerCase())>=0;});
+        setBadge(isCorte?'EN EL CORTE':'EN VIVO',isCorte);
+      }
+    };
+    obsWS.onclose=function(){setTimeout(obsConnect,5000);};
+    obsWS.onerror=function(){};
+  }catch(ex){}
 }
+obsConnect();
 
-// Arrancar el contador cuando se muestra el reloj
-var origShowClock = showClock;
-showClock = function(cfg){
-  origShowClock(cfg);
-  startCount();
-};
-var origHideClock = hideClock;
-hideClock = function(){
-  origHideClock();
-  if(countTimer){ clearInterval(countTimer); countTimer=null; }
-  countSec=0;
-  document.getElementById('clock').textContent='00:00:00';
-};
+// Arrancar contador al cargar
+startCount();
 </script>
 </body>
 </html>
