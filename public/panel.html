@@ -41,8 +41,8 @@ body{background:var(--bg);color:var(--white);font-family:'DM Sans',sans-serif;fo
 /* Editor */
 .editor{padding:10px}
 .ed-back{background:none;border:none;color:var(--blueL);font-size:12px;cursor:pointer;font-family:inherit;font-weight:600;padding:4px 0;margin-bottom:8px}
-.ed-preview{border-radius:8px;background:repeating-conic-gradient(var(--bg) 0% 25%,#060c22 0% 50%) 0 0/14px 14px;border:1px solid var(--border);overflow:hidden;height:130px;position:relative;margin-bottom:10px}
-.ed-preview iframe{width:1920px;height:1080px;border:none;background:transparent;transform-origin:0 0;pointer-events:none;position:absolute;top:0;left:0}
+.ed-preview{border-radius:8px;background:repeating-conic-gradient(var(--bg) 0% 25%,#060c22 0% 50%) 0 0/14px 14px;border:1px solid var(--border);overflow:hidden;min-height:60px;position:relative;margin-bottom:10px;padding:10px}
+.ed-preview iframe{border:none;background:transparent;pointer-events:none;width:100%;height:80px}
 .ed-preview .replay{position:absolute;top:4px;right:4px;background:rgba(0,0,0,.6);border:1px solid #333;border-radius:5px;padding:2px 8px;color:#ccc;font-size:10px;cursor:pointer;font-family:inherit}
 .sub-tabs{display:flex;gap:0;margin-bottom:10px;border-bottom:1px solid var(--border)}
 .sub-tabs button{flex:1;padding:8px 0;font-size:10px;font-weight:600;background:none;border:none;cursor:pointer;color:var(--muted);font-family:inherit;border-bottom:2px solid transparent;text-transform:uppercase;letter-spacing:.5px;transition:.15s}
@@ -273,6 +273,20 @@ function genHTML(z,noAnim){
   if(z.type==='title')return genTT(z.config,noAnim);
   return genTK(z.config,noAnim);
 }
+
+// Preview without position:fixed — fits inside the preview box
+function genPreviewFit(z){
+  var html=genHTML(z);
+  // Remove position:fixed and offsets so it renders inline
+  html=html.replace(/position:fixed;/g,'position:relative;');
+  html=html.replace(/bottom:\d+px;/g,'');
+  html=html.replace(/top:\d+px;/g,'');
+  html=html.replace(/left:\d+px;/g,'');
+  html=html.replace(/right:\d+px;/g,'');
+  html=html.replace(/left:50%;transform:translateX\(-50%\);/g,'');
+  html=html.replace(/width:100vw;/g,'width:100%;');
+  return html;
+}
 // ═══════════════════════════════
 // SOCIAL FILMINA
 // ═══════════════════════════════
@@ -321,7 +335,6 @@ function renderList(app){
     var sub=z.type==='nameRole'?z.config.role:z.type==='title'?(z.config.tag||''):(z.config.text||'').slice(0,30)+'...';
     var html=genHTML(z);
     h+='<div class="card">';
-    h+='<div class="card-preview"><iframe srcdoc="'+esc(html)+'" style="transform:scale('+pvScale+')"></iframe></div>';
     h+='<div class="card-head"><span class="icon">'+icon+'</span><div class="info"><div class="name">'+esc(label)+'</div><div class="sub">'+esc(sub)+'</div></div></div>';
     h+='<div class="card-actions">';
     h+='<button class="btn-s'+(z.live?' live':'')+'" onclick="toggleLive(\''+z.id+'\')">'+( z.live?'● AL AIRE':'○ Mostrar')+'</button>';
@@ -370,7 +383,7 @@ function renderEditor(app){
   var html=genHTML(z);
   var h='<div class="editor">';
   h+='<button class="ed-back" onclick="closeEdit()">← Volver</button>';
-  h+='<div class="ed-preview"><iframe id="pvFrame" srcdoc="'+esc(html)+'" style="transform:scale('+edScale+')"></iframe><button class="replay" onclick="replayPv()">↻</button></div>';
+  h+='<div class="ed-preview"><iframe id="pvFrame" srcdoc="'+esc(genPreviewFit(z))+'"></iframe><button class="replay" onclick="replayPv()">↻</button></div>';
 
   // Sub tabs
   var tabs=z.type==='ticker'?['content','estilo','posición','efectos']:['content','estilo','posición','animación','efectos'];
@@ -674,7 +687,7 @@ function updC(key,val){
   if(_pvTimer)clearTimeout(_pvTimer);
   _pvTimer=setTimeout(function(){
     var f=document.getElementById('pvFrame');
-    if(f)f.srcdoc=genHTML(z);
+    if(f)f.srcdoc=genPreviewFit(z);
     if(z.live){
       if(z.type==='ticker') bc.postMessage({action:'updateTicker',text:z.config.text,cfg:z.config});
       else bc.postMessage({action:'show',id:z.id,html:genHTML(z,true)});
@@ -792,7 +805,7 @@ function replayPv(){
   var z=S.zocalos.find(function(x){return x.id===S.editId});
   if(!z)return;
   var f=document.getElementById('pvFrame');
-  if(f) f.srcdoc=genHTML(z);
+  if(f) f.srcdoc=genPreviewFit(z);
 }
 
 // Live toggle
