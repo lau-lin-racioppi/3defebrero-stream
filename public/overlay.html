@@ -42,8 +42,6 @@ body{background:transparent;overflow:hidden;width:1920px;height:1080px}
   pointer-events:none;
   opacity:0;
   transition:opacity .4s;
-  top:60px;
-  right:140px;
 }
 #info-pill.on{ opacity:1 }
 #info-pill-inner{
@@ -319,6 +317,14 @@ function showInfoPill(cfg){
   infoPillFecha=getInfoFecha();
   infoPillMode=0;
   document.getElementById('info-pill-text').textContent=infoPillFecha;
+  // Aplicar color igual que el reloj
+  var pillInner=document.getElementById('info-pill-inner');
+  var pillText=document.getElementById('info-pill-text');
+  if(window._clockCfg){
+    pillInner.style.background=hrgba(window._clockCfg.bg,window._clockCfg.opacity);
+    pillText.style.color=window._clockCfg.textColor||'#ffffff';
+    pillText.style.fontSize=(window._clockCfg.fontSize||14)+'px';
+  }
   document.getElementById('info-pill').classList.add('on');
   if(infoPillTimer)clearInterval(infoPillTimer);
   infoPillTimer=setInterval(infoPillTick,interval);
