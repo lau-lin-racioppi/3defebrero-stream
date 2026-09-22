@@ -55,6 +55,31 @@ body{background:transparent;overflow:hidden;width:1920px;height:1080px}
   animation:gorritoEntry .9s cubic-bezier(.22,1,.36,1) both,
              gorritoSway 4s ease-in-out infinite .9s;
 }
+
+/* ═══ INFO PILL (fecha/temp) ═══ */
+#info-pill{
+  position:fixed;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .4s;
+}
+#info-pill.on{ opacity:1 }
+#info-pill-inner{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:4px 16px;
+  border-radius:6px;
+  background:rgba(13,27,62,.85);
+  min-width:80px;
+}
+#info-pill-text{
+  color:#fff;
+  font-weight:700;
+  font-size:13px;
+  letter-spacing:1px;
+  white-space:nowrap;
+}
 </style>
 </head>
 <body>
@@ -102,6 +127,8 @@ bc.onmessage=function(e){
   else if(d.action==='hideClock')stopClock();
   else if(d.action==='showLive')startLive(d.cfg);
   else if(d.action==='hideLive')stopLive();
+  else if(d.action==='showInfoPill')showInfoPill(d.cfg);
+  else if(d.action==='hideInfoPill')hideInfoPill();
   else if(d.action==='showGorrito')showGorrito(d.cfg);
   else if(d.action==='hideGorrito')hideGorrito();
   else if(d.action==='updateLive'){
@@ -241,6 +268,7 @@ function moscaShow(){
 // ═══ CLOCK ═══
 var clockTimer=null;
 function startClock(cfg){
+  window._clockCfg=cfg;
   var el=document.getElementById('clock');
   el.style.top=cfg.top+'px';
   if(cfg.posX==='left'){el.style.left=cfg.offsetX+'px';el.style.right='auto'}else{el.style.right=cfg.offsetX+'px';el.style.left='auto'}
@@ -262,6 +290,60 @@ function startLive(cfg){
   el.classList.add('on');
 }
 function stopLive(){document.getElementById('live-badge').classList.remove('on')}
+
+
+// ═══ INFO PILL fecha/temp ═══
+var infoPillActive=false, infoPillTimer=null, infoPillMode=0;
+var infoPillTemp='--°C', infoPillFecha='--/--/--';
+
+// Fecha dd/mm/aa
+function getInfoFecha(){
+  var n=new Date();
+  return String(n.getDate()).padStart(2,'0')+'/'+String(n.getMonth()+1).padStart(2,'0')+'/'+String(n.getFullYear()).slice(-2);
+}
+
+// Temperatura Caseros — Open-Meteo
+function fetchInfoTemp(){
+  fetch('https://api.open-meteo.com/v1/forecast?latitude=-34.6058&longitude=-58.5639&current_weather=true')
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.current_weather&&d.current_weather.temperature!==undefined)
+        infoPillTemp=Math.round(d.current_weather.temperature)+'°C';
+    }).catch(function(){});
+}
+fetchInfoTemp();
+setInterval(fetchInfoTemp,10*60*1000);
+
+function infoPillTick(){
+  infoPillFecha=getInfoFecha();
+  var txt=infoPillMode===0?infoPillFecha:infoPillTemp;
+  document.getElementById('info-pill-text').textContent=txt;
+  infoPillMode=1-infoPillMode;
+}
+
+function showInfoPill(cfg){
+  var interval=(cfg&&cfg.interval?cfg.interval:30)*1000;
+  // Posición: debajo del reloj (usa clockCfg si está disponible)
+  var el=document.getElementById('info-pill');
+  if(window._clockCfg){
+    var cc=window._clockCfg;
+    el.style.top=(cc.top+28)+'px';
+    if(cc.posX==='right'){el.style.right=cc.offsetX+'px';el.style.left='';}
+    else{el.style.left=cc.offsetX+'px';el.style.right='';}
+  }
+  infoPillFecha=getInfoFecha();
+  infoPillMode=0;
+  document.getElementById('info-pill-text').textContent=infoPillFecha;
+  document.getElementById('info-pill').classList.add('on');
+  if(infoPillTimer)clearInterval(infoPillTimer);
+  infoPillTimer=setInterval(infoPillTick,interval);
+  infoPillActive=true;
+}
+function hideInfoPill(){
+  document.getElementById('info-pill').classList.remove('on');
+  if(infoPillTimer){clearInterval(infoPillTimer);infoPillTimer=null;}
+  infoPillActive=false;
+}
 
 // ═══ GORRITO MUNDIALISTA ═══
 var gorritoActive=false;
@@ -292,5 +374,7 @@ function hideGorrito(){
 </script>
 
 <div id="gorrito"><img id="gorrito-img" width="120" data-loaded="false"></div>
+
+<div id="info-pill"><div id="info-pill-inner"><span id="info-pill-text">--/--/--</span></div></div>
 </body>
 </html>
