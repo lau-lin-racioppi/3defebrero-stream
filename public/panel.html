@@ -162,7 +162,7 @@ var S={
   clockLive:false,
   liveCfg:{top:28,offsetX:40,posX:'right',fontSize:12,bg:'rgba(204,20,20,0.9)',text:'EN VIVO'},
   liveLive:false,
-  infoPillLive:false,infoPillCfg:{interval:30,top:60,offsetX:140,posX:"right"},
+  infoPillLive:false,infoPillCfg:{interval:30,top:60,offsetX:140,posX:'right',mode:'alternar',fontSize:14,opacity:0.85,textColor:'#ffffff',bg:'#0d1b3e'},
   corteScenes:['CORTE 1'],
   obsConnected:false,
   currentScene:'',
@@ -631,10 +631,16 @@ function renderClock(app){
   h+=fldSelect('Lado',S.infoPillCfg.posX||'right','ip_posX',[{v:'left',l:'Izquierda'},{v:'right',l:'Derecha'}]);
   h+=fldRange('Desde arriba',S.infoPillCfg.top,5,300,5,'px','ip_top');
   h+=fldRange('Desde el borde',S.infoPillCfg.offsetX,5,400,5,'px','ip_offsetX');
+  h+='<div class="sep">Estilo</div>';
+  h+=fldRange('Tamaño texto',S.infoPillCfg.fontSize||14,8,28,1,'px','ip_fontSize');
+  h+=fldRange('Opacidad fondo',S.infoPillCfg.opacity||0.85,0,1,0.05,'','ip_opacity');
+  h+='<div class="colors">'+fldColor('Texto',S.infoPillCfg.textColor||'#ffffff','ip_textColor')+fldColor('Fondo',S.infoPillCfg.bg||'#0d1b3e','ip_bg')+'</div>';
   h+='<div class="sep">Comportamiento</div>';
-  h+=fldRange('Intervalo alternancia',S.infoPillCfg.interval,5,120,5,'s','ip_interval');
+  h+=fldSelect('Mostrar',S.infoPillCfg.mode||'alternar','ip_mode',[{v:'alternar',l:'Alternar fecha y temp'},{v:'fecha',l:'Solo fecha'},{v:'temp',l:'Solo temperatura'}]);
+  if(S.infoPillCfg.mode==='alternar'||!S.infoPillCfg.mode){
+    h+=fldRange('Intervalo (segundos)',S.infoPillCfg.interval,5,120,5,'s','ip_interval');
+  }
   h+='</div>';
-
 
   app.innerHTML=h;
 }
