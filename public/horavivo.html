@@ -53,29 +53,21 @@ html,body{
   letter-spacing:6px;line-height:1;text-align:center;
 }
 
-/* PILL FECHA/TEMP — debajo de la hora */
+/* PILLS FECHA + TEMP — fijas debajo de la hora */
 #info-wrap{
   position:absolute;
   bottom:60px;left:50%;
   transform:translateX(-50%);
+  display:flex;
+  gap:30px;
+  white-space:nowrap;
+}
+.info-pill{
   padding:14px 60px;
   background:rgba(20,60,160,.6);
   border-radius:12px;
-  white-space:nowrap;
-  min-width:400px;
   text-align:center;
-  overflow:hidden;
-  height:100px;
 }
-.info-slide{
-  position:absolute;
-  width:100%;left:0;top:0;
-  display:flex;align-items:center;justify-content:center;
-  height:100px;
-  opacity:0;
-  transition:opacity .8s ease;
-}
-.info-slide.active{ opacity:1; }
 .info-txt{
   font-size:64px;font-weight:700;color:#fff;
   letter-spacing:4px;line-height:1;
@@ -94,10 +86,10 @@ html,body{
 </div>
 
 <div id="info-wrap">
-  <div class="info-slide active" id="slide-fecha">
+  <div class="info-pill">
     <span class="info-txt" id="fecha">---</span>
   </div>
-  <div class="info-slide" id="slide-temp">
+  <div class="info-pill">
     <span class="info-txt" id="temp">--°C</span>
   </div>
 </div>
@@ -134,15 +126,7 @@ function fetchTemp(){
 fetchTemp();
 setInterval(fetchTemp,10*60*1000);
 
-// ── SLIDER fecha ↔ temp cada 5s ──
-var slides=['slide-fecha','slide-temp'];
-var cur=0;
-function nextSlide(){
-  document.getElementById(slides[cur]).classList.remove('active');
-  cur=(cur+1)%slides.length;
-  document.getElementById(slides[cur]).classList.add('active');
-}
-setInterval(nextSlide,30000);
+
 
 // ── BADGE ──
 var COLOR_VIVO='rgba(204,20,20,0.9)';
