@@ -655,7 +655,7 @@ function fldTextarea(label,val,key){
   return '<div class="fld"><label>'+label+'</label><textarea rows="3" oninput="updC(\''+key+'\',this.value)">'+esc(val)+'</textarea></div>';
 }
 function fldRange(label,val,mn,mx,step,unit,key){
-  return '<div class="fld"><label>'+label+'</label><div class="num-row"><input type="number" step="'+step+'" value="'+val+'" oninput="updFull(\''+key+'\',parseFloat(this.value))" onchange="updFull(\''+key+'\',parseFloat(this.value))" class="num-free"><span class="num-unit">'+unit+'</span></div></div>';
+  return '<div class="fld"><label>'+label+'</label><div class="num-row"><input type="number" step="'+step+'" value="'+val+'" oninput="updC(\''+key+'\',parseFloat(this.value))" onchange="updFull(\''+key+'\',parseFloat(this.value))" class="num-free"><span class="num-unit">'+unit+'</span></div></div>';
 }
 function fldSelect(label,val,key,opts){
   var h='<div class="fld"><label>'+label+'</label><select onchange="updFull(\''+key+'\',this.value)">';
@@ -688,8 +688,6 @@ function updC(key,val){
   var z=S.zocalos.find(function(x){return x.id===S.editId});
   if(!z)return;
   z.config[key]=val;save();
-  var f=document.getElementById('pvFrame');
-  if(f)f.srcdoc=genHTML(z);
   if(z.live){
     if(z.type==='ticker') bc.postMessage({action:'updateTicker',text:z.config.text,cfg:z.config});
     else bc.postMessage({action:'show',id:z.id,html:genHTML(z,true)});
