@@ -383,7 +383,8 @@ function renderEditor(app){
   var html=genHTML(z);
   var h='<div class="editor">';
   h+='<button class="ed-back" onclick="closeEdit()">← Volver</button>';
-  h+='<div class="ed-preview"><iframe id="pvFrame" srcdoc="'+esc(genPreviewFit(z))+'"></iframe><button class="replay" onclick="replayPv()">↻</button></div>';
+  h+='<div class="ed-preview" id="pvBox" style="display:none"></div>';
+  h+='<button class="btn-s" onclick="showPreview()" style="width:100%;justify-content:center;margin-bottom:10px">▶ Previsualizar</button>';
 
   // Sub tabs
   var tabs=z.type==='ticker'?['content','estilo','posición','efectos']:['content','estilo','posición','animación','efectos'];
@@ -683,11 +684,9 @@ function updC(key,val){
   var z=S.zocalos.find(function(x){return x.id===S.editId});
   if(!z)return;
   z.config[key]=val;save();
-  // Debounce preview update to avoid stealing focus
+  // No preview update while typing — use Preview button
   if(_pvTimer)clearTimeout(_pvTimer);
   _pvTimer=setTimeout(function(){
-    var f=document.getElementById('pvFrame');
-    if(f)f.srcdoc=genPreviewFit(z);
     if(z.live){
       if(z.type==='ticker') bc.postMessage({action:'updateTicker',text:z.config.text,cfg:z.config});
       else bc.postMessage({action:'show',id:z.id,html:genHTML(z,true)});
@@ -801,11 +800,13 @@ function autoFetchNews(){
     }).catch(function(){done++;});
   });
 }
-function replayPv(){
+function showPreview(){
   var z=S.zocalos.find(function(x){return x.id===S.editId});
   if(!z)return;
-  var f=document.getElementById('pvFrame');
-  if(f) f.srcdoc=genPreviewFit(z);
+  var box=document.getElementById('pvBox');
+  if(!box)return;
+  box.style.display='block';
+  box.innerHTML='<iframe srcdoc="'+esc(genPreviewFit(z))+'"></iframe><button class="replay" onclick="document.getElementById(\'pvBox\').style.display=\'none\'">✕</button>';
 }
 
 // Live toggle
