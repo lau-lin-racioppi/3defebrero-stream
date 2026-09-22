@@ -663,7 +663,7 @@ function fldSelect(label,val,key,opts){
   return h+'</select></div>';
 }
 function fldColor(label,val,key){
-  return '<label><input type="color" value="'+(val||'#000000').slice(0,7)+'" oninput="updC(\''+key+'\',this.value)"><span>'+label+'</span></label>';
+  return '<label><input type="color" value="'+(val||'#000000').slice(0,7)+'" oninput="updC(\''+key+'\',this.value)" onchange="updC(\''+key+'\',this.value)"><span>'+label+'</span></label>';
 }
 function fldCheck(label,val,key){
   return '<div class="chk"><input type="checkbox" '+(val?'checked':'')+' onchange="updFull(\''+key+'\',this.checked)"><span>'+label+'</span></div>';
@@ -694,13 +694,15 @@ function updC(key,val){
   }
 }
 
-// Full re-render (for selects, ranges, checkboxes)
+// Update config with selective re-render
 function updFull(key,val){
-  if(key.startsWith('f_')){var fk=key.slice(2);S.filmCfg[fk]=val;save();if(S.filminaLive)sendFilmina();render();return}
-  if(key.startsWith('m_')){var mk=key.slice(2);S.moscaCfg[mk]=val;save();if(S.moscaLive)sendMosca();render();return}
-  if(key.startsWith('c_')){var ck=key.slice(2);S.clockCfg[ck]=val;save();if(S.clockLive)sendClock();render();return}
-  if(key.startsWith('lv_')){var lk=key.slice(3);S.liveCfg[lk]=val;save();if(S.liveLive)sendLive();render();return}
-  if(key.startsWith('ip_')){var ik=key.slice(3);S.infoPillCfg[ik]=val;save();if(S.infoPillLive)sendInfoPill();render();return}
+  if(key.startsWith('f_')){var fk=key.slice(2);S.filmCfg[fk]=val;save();if(S.filminaLive)sendFilmina();
+    if(fk==='animIn'||fk==='animOut'||fk==='shake')render();return}
+  if(key.startsWith('m_')){var mk=key.slice(2);S.moscaCfg[mk]=val;save();if(S.moscaLive)sendMosca();return}
+  if(key.startsWith('c_')){var ck=key.slice(2);S.clockCfg[ck]=val;save();if(S.clockLive)sendClock();return}
+  if(key.startsWith('lv_')){var lk=key.slice(3);S.liveCfg[lk]=val;save();if(S.liveLive)sendLive();return}
+  if(key.startsWith('ip_')){var ik=key.slice(3);S.infoPillCfg[ik]=val;save();if(S.infoPillLive)sendInfoPill();
+    if(ik==='mode')render();return}
   var z=S.zocalos.find(function(x){return x.id===S.editId});
   if(!z)return;
   z.config[key]=val;save();
@@ -708,8 +710,10 @@ function updFull(key,val){
     if(z.type==='ticker') bc.postMessage({action:'updateTicker',text:z.config.text,cfg:z.config});
     else bc.postMessage({action:'show',id:z.id,html:genHTML(z,true)});
   }
-  render();
+  var layoutProps=['showTag','showSubtitle','showAccent','heightMode','widthMode','posX','posY','shadow','glow','tagPos','textAlign'];
+  if(layoutProps.indexOf(key)>=0)render();
 }
+
 
 function addZ(type){
   if(S.zocalos.length>=8)return;
@@ -857,6 +861,7 @@ function hideAllZocalos(){
   if(S.moscaLive){S.moscaLive=false;bc.postMessage({action:'hideMosca'})}
   if(S.clockLive){S.clockLive=false;bc.postMessage({action:'hideClock'})}
   if(S.liveLive){S.liveLive=false;bc.postMessage({action:'hideLive'})}
+  if(S.infoPillLive){S.infoPillLive=false;bc.postMessage({action:'hideInfoPill'})}
   save();render();
 }
 
@@ -877,6 +882,7 @@ function activateAll(){
   if(!S.moscaLive){S.moscaLive=true;sendMosca()}
   if(!S.clockLive){S.clockLive=true;sendClock()}
   if(!S.liveLive){S.liveLive=true;sendLive()}
+  if(!S.infoPillLive){S.infoPillLive=true;sendInfoPill()}
   save();render();
 }
 
