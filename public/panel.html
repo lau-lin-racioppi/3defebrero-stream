@@ -649,7 +649,7 @@ function fldTextarea(label,val,key){
   return '<div class="fld"><label>'+label+'</label><textarea rows="3" oninput="updC(\''+key+'\',this.value)">'+esc(val)+'</textarea></div>';
 }
 function fldRange(label,val,mn,mx,step,unit,key){
-  return '<div class="fld"><label>'+label+'</label><div class="num-row"><input type="number" step="'+step+'" value="'+val+'" onchange="updFull(\''+key+'\',parseFloat(this.value))" class="num-free"><span class="num-unit">'+unit+'</span></div></div>';
+  return '<div class="fld"><label>'+label+'</label><div class="num-row"><input type="number" step="'+step+'" value="'+val+'" oninput="updFull(\''+key+'\',parseFloat(this.value))" onchange="updFull(\''+key+'\',parseFloat(this.value))" class="num-free"><span class="num-unit">'+unit+'</span></div></div>';
 }
 function fldSelect(label,val,key,opts){
   var h='<div class="fld"><label>'+label+'</label><select onchange="updFull(\''+key+'\',this.value)">';
