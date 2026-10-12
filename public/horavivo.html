@@ -15,33 +15,33 @@ html,body{
 /* BADGE — arriba, centrado */
 #badge{
   position:absolute;
-  top:80px;left:50%;
+  top:60px;left:50%;
   transform:translateX(-50%);
-  display:flex;align-items:center;gap:20px;
-  padding:22px 80px 22px 56px;
-  border-radius:12px;
+  display:flex;align-items:center;gap:40px;
+  padding:44px 160px 44px 112px;
+  border-radius:24px;
   background:rgba(204,20,20,.9);
   transition:background .5s;
   white-space:nowrap;
 }
 .dot{
-  width:26px;height:26px;border-radius:50%;
+  width:52px;height:52px;border-radius:50%;
   background:#ff4444;flex-shrink:0;
   animation:pulse 1.5s ease-in-out infinite;
 }
 @keyframes pulse{
   0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(255,68,68,.6)}
-  50%{opacity:.7;box-shadow:0 0 0 14px rgba(255,68,68,0)}
+  50%{opacity:.7;box-shadow:0 0 0 28px rgba(255,68,68,0)}
 }
 #badge-text{
-  font-size:96px;font-weight:900;color:#fff;
-  letter-spacing:8px;text-transform:uppercase;line-height:1;
+  font-size:192px;font-weight:900;color:#fff;
+  letter-spacing:16px;text-transform:uppercase;line-height:1;
 }
 
 /* PILL HORA — abajo, centrada */
 #hora-wrap{
   position:absolute;
-  bottom:200px;left:50%;
+  bottom:260px;left:50%;
   transform:translateX(-50%);
   padding:18px 80px;
   background:rgba(20,60,160,.88);
@@ -53,24 +53,23 @@ html,body{
   letter-spacing:6px;line-height:1;text-align:center;
 }
 
-/* PILLS FECHA + TEMP — fijas debajo de la hora */
+/* PILLS TEMP (izquierda) + FECHA (derecha) — debajo de la hora */
 #info-wrap{
   position:absolute;
-  bottom:60px;left:50%;
-  transform:translateX(-50%);
+  bottom:40px;left:60px;right:60px;
   display:flex;
-  gap:30px;
+  justify-content:space-between;
   white-space:nowrap;
 }
 .info-pill{
-  padding:14px 60px;
+  padding:28px 80px;
   background:rgba(20,60,160,.6);
-  border-radius:12px;
+  border-radius:24px;
   text-align:center;
 }
 .info-txt{
-  font-size:64px;font-weight:700;color:#fff;
-  letter-spacing:4px;line-height:1;
+  font-size:128px;font-weight:700;color:#fff;
+  letter-spacing:8px;line-height:1;
 }
 </style>
 </head>
@@ -87,10 +86,10 @@ html,body{
 
 <div id="info-wrap">
   <div class="info-pill">
-    <span class="info-txt" id="fecha">---</span>
+    <span class="info-txt" id="temp">--°C</span>
   </div>
   <div class="info-pill">
-    <span class="info-txt" id="temp">--°C</span>
+    <span class="info-txt" id="fecha">---</span>
   </div>
 </div>
 
